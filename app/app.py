@@ -12,10 +12,23 @@ from modules.sacn_send import SacnSend
 class PlayerApp:
     def __init__(self, config):
         self.config = config
+
         self.ctx = zmq.asyncio.Context()
-        self.sock = self.ctx.socket(zmq.REP)
-        self.sock.setsockopt(zmq.RECONNECT_IVL, 1000)  # set reconnect interval to 1s
-        self.sock.setsockopt(zmq.RECONNECT_IVL_MAX, 5000)  # set max reconnect interval to 5s
+
+        # Publish for the apps
+        self.pub_socket = self.ctx.socket(zmq.PUB)
+        self.pub_socket.bind(f"tcp://{config['zmq']['ip_bind']}:{config['zmq']['port_player_pub']}")  # Publish to the player app
+
+        # Subscribe to the server app
+        self.server_sub_socket = self.ctx.socket(zmq.SUB)
+        self.server_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_server_pub']}")  
+        self.server_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+
+        # Subscribe to the serial app
+        self.serial_sub_socket = self.ctx.socket(zmq.SUB)
+        self.serial_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")  
+        self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+
         self.ws_queue = asyncio.Queue()
 
         self.command_dict = {
@@ -61,81 +74,70 @@ class PlayerApp:
 
     async def play(self, params):
         self.video_player.play()
-        await self.sock.send_string("OK")
 
     async def pause(self, params):
         self.video_player.pause()
-        await self.sock.send_string("OK")
 
     async def stop(self, params):
         self.video_player.stop()
-        await self.sock.send_string("OK")
 
     async def restart(self, params):
         logging.debug("Received restart")
         self.video_player.restart_video()
-        await self.sock.send_string("OK")
 
     async def prev(self, params):
         logging.debug("Received prev")
         self.video_player.prev_video()
-        await self.sock.send_string("OK")
 
     async def next(self, params):
         logging.debug("Received next")
         self.video_player.next_video()
-        await self.sock.send_string("OK")
-        
 
     async def get_state(self, params):
         state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
         if self.video_player.state == VideoPlayerState.STOPPED:
             state = "stopped"
             logging.debug("Received get_state: " + state)
-        await self.sock.send_string(str(state))
+        #  await self.sock.send_string(str(state))
 
     async def set_brightness(self, params):
         params = params.split(' ')
         brightness = int(float(params[1])) if params else None
         if brightness is not None:
             #  self.display.brightness_level = int(brightness)
-            #  logging.debug("Received set_brightness: " + str(brightness))
             self.sacn.brightness= int(brightness)
-            await self.sock.send_string("OK")
 
     async def get_brightness(self, params):
-        #  logging.debug("Received get_brightness"+ str(self.sacn.brightness))
-        await self.sock.send_string(str(self.sacn.brightness))
+        #  await self.sock.send_string(str(self.sacn.brightness))
+        pass
 
     async def set_fps(self, params):
         params = params.split(' ')
         fps = int(float(params[1])) if params else None
         if fps is not None:
             self.video_player.fps = fps
-            await self.sock.send_string("OK")
     
     async def get_fps(self, params):
-        await self.sock.send_string(str(self.video_player.fps))
+        #  await self.sock.send_string(str(self.video_player.fps))
+        pass
 
     async def repeat(self, params):
         logging.debug("Received repeat")
         self.video_player.mode = VideoPlayerMode.REPEAT
-        await self.sock.send_string("OK")
 
     async def repeat_one(self, params):
         logging.debug("Received repeat_one")
         self.video_player.mode = VideoPlayerMode.REPEAT_ONE
-        await self.sock.send_string("OK")
 
     async def repeat_none(self, params):
         logging.debug("Received repeat_none")
         self.video_player.mode = VideoPlayerMode.REPEAT_NONE
-        await self.sock.send_string("OK")
 
     async def get_current_video(self, params):
-        #return current video name
-        await self.sock.send_string(self.video_player.get_current_video_name())
-        #  await self.sock.send_string(self.video_player.current_video)
+        #  #return current video name
+        #  await self.sock.send_string(self.video_player.get_current_video_name())
+        #  #  await self.sock.send_string(self.video_player.current_video)
+        pass
 
 
     def get_log_level(self, level):
@@ -149,35 +151,44 @@ class PlayerApp:
         return levels.get(level.upper(), logging.INFO)
 
     def reset_socket(self):
-        # close the current socket
-        self.sock.close()
-        # create a new socket
-        new_sock = self.ctx.socket(zmq.REP)
-        new_sock.setsockopt(zmq.RECONNECT_IVL, 1000)  # set reconnect interval to 1s
-        new_sock.setsockopt(zmq.RECONNECT_IVL_MAX, 5000)  # set max reconnect interval to 5s
-        # bind the new socket
-        try:
-            new_sock.bind(f"tcp://{self.config['zmq']['ip_player']}:{self.config['zmq']['port']}")
-        except zmq.ZMQError as zmq_error:
-            logging.error(f"ZMQ Error occurred during socket reset: {str(zmq_error)}")
-        return new_sock
+        logging.debug("Resetting socket")
+        #  # close the current socket
+        #  self.sock.close()
+        #  # create a new socket
+        #  new_sock = self.ctx.socket(zmq.REP)
+        #  new_sock.setsockopt(zmq.RECONNECT_IVL, 1000)  # set reconnect interval to 1s
+        #  new_sock.setsockopt(zmq.RECONNECT_IVL_MAX, 5000)  # set max reconnect interval to 5s
+        #  # bind the new socket
+        #  try:
+        #      new_sock.bind(f"tcp://{self.config['zmq']['ip_player']}:{self.config['zmq']['port']}")
+        #  except zmq.ZMQError as zmq_error:
+        #      logging.error(f"ZMQ Error occurred during socket reset: {str(zmq_error)}")
+        #  return new_sock
  
+    async def listen_to_messages(sock):
+        while True:
+            message = await sock.recv_string()
+            await self.process_message(message)
 
     async def run(self):
-        self.sock.bind(f"tcp://{self.config['zmq']['ip_player']}:{self.config['zmq']['port']}")
-
+        asyncio.ensure_future(self.listen_to_messages(self.server_sub_socket))
+        asyncio.ensure_future(self.listen_to_messages(self.serial_sub_socket))
         while True:
             try:
-                message = await self.sock.recv_string()
-                await self.process_message(message)
+                # send player state
+                await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
+                await self.pub_socket.send_string("fps "+str(self.video_player.fps))
+                await self.pub_socket.send_string("state "+str(self.video_player.state))
+                await self.pub_socket.send_string("mode "+str(self.video_player.mode))
+                await self.pub_socket.send_string("current_media "+str(self.video_player.get_current_video_name()))
+                #  pub_socket.send_string("")
 
             except zmq.ZMQError as zmq_error:
                 logging.error(f"ZMQ Error occurred: {str(zmq_error)}")
-                self.sock = self.reset_socket()  # reset the socket when a ZMQError occurs
         
             except Exception as e:
                 logging.error(f"An error occurred: {str(e)}")
-                await self.sock.send_string(f"An error occurred: {str(e)}")
+                await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
     async def process_message(self, message):
         try:
