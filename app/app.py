@@ -13,6 +13,8 @@ class PlayerApp:
     def __init__(self, config):
         self.config = config
 
+        logging.basicConfig(level=self.get_log_level(config['debug']['log_level']))
+
         self.ctx = zmq.asyncio.Context()
 
         # Publish for the apps
@@ -53,10 +55,10 @@ class PlayerApp:
 
 
         #handle dummy config setting
-        dummy_key_s = self.config['debug']['dummy_send']
-        dummy_key = False
-        if dummy_key_s == "True":
-            dummy_key = True
+        self.dummy_key_s = self.config['debug']['dummy_send']
+        self.dummy_key = False
+        if self.dummy_key_s == "True":
+            self.dummy_key = True
 
         #  self.display = ColorLightDisplay(
         #      interface=config['interface'],
@@ -66,10 +68,14 @@ class PlayerApp:
         #
         #  self.video_player = VideoPlayer(self.ws_queue, config['video_dir'], display_callback=self.display.display_frame)
 
-        self.sacn = SacnSend(config['sacn']['bind_address'], dummy=dummy_key, brightness=config['brightness_level'], multicast = config['sacn']['multicast'] == 1 , universe_count=config['sacn']['universe_count'])
-        self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], display_callback=self.sacn.send_frame)
+        logging.debug("sacn address: " + config['sacn']['bind_address'])
 
-        logging.basicConfig(level=self.get_log_level(config['debug']['log_level']))
+        if not self.dummy_key:
+            self.sacn = SacnSend(config['sacn']['bind_address'], dummy=self.dummy_key, brightness=config['brightness_level'], multicast = config['sacn']['multicast'] == 1 , universe_count=config['sacn']['universe_count'])
+
+        #  self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], display_callback=self.sacn.send_frame)
+        self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], )
+
         self.video_player.play()
 
     async def play(self, params):
@@ -176,7 +182,8 @@ class PlayerApp:
         while True:
             try:
                 # send player state
-                await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
+                #  await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
+                await self.pub_socket.send_string("brightness "+str(66))
                 await self.pub_socket.send_string("fps "+str(self.video_player.fps))
                 await self.pub_socket.send_string("state "+str(self.video_player.state))
                 await self.pub_socket.send_string("mode "+str(self.video_player.mode))
