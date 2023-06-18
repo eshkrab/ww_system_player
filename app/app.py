@@ -76,6 +76,7 @@ class PlayerApp:
         #  self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], display_callback=self.sacn.send_frame)
         self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], )
 
+        logging.debug("Player app initialized")
         self.video_player.play()
 
     async def play(self, params):
@@ -182,8 +183,7 @@ class PlayerApp:
         while True:
             try:
                 # send player state
-                #  await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
-                await self.pub_socket.send_string("brightness "+str(66))
+                await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
                 await self.pub_socket.send_string("fps "+str(self.video_player.fps))
                 await self.pub_socket.send_string("state "+str(self.video_player.state))
                 await self.pub_socket.send_string("mode "+str(self.video_player.mode))
@@ -198,6 +198,7 @@ class PlayerApp:
                 await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
     async def process_message(self, message):
+        logging.debug(f"Received message: {message}")
         try:
             command = message.split(' ', 1)[0]
             logging.debug(f"Received command: {command}")
