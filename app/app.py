@@ -190,6 +190,7 @@ class PlayerApp:
                     logging.debug("Sending fps: " + str(self.video_player.fps))
                     await self.pub_socket.send_string("fps "+str(self.video_player.fps))
                 if self.video_player.state:
+                    logging.debug("Sending state: " + str(self.video_player.state))
                     await self.pub_socket.send_string("state "+str(self.video_player.state))
                 if self.video_player.mode:
                     logging.debug("Sending mode: " + str(self.video_player.mode))
