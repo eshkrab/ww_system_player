@@ -171,7 +171,7 @@ class PlayerApp:
         #      logging.error(f"ZMQ Error occurred during socket reset: {str(zmq_error)}")
         #  return new_sock
  
-    async def listen_to_messages(sock):
+    async def listen_to_messages(self, sock):
         while True:
             message = await sock.recv_string()
             await self.process_message(message)
