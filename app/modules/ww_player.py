@@ -139,6 +139,7 @@ class WWVideoPlayer:
                         self.load_video(self.current_video_index)
 
                     if self.current_video:
+                        logging.debug("Updating current video")
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
