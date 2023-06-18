@@ -131,9 +131,11 @@ class WWVideoPlayer:
                     continue
                 elif self.state == VideoPlayerState.PLAYING:
                     if not self.playlist:
+                        logging.debug("No playlist, loading")
                         self.load_playlist()
 
                     if not self.current_video and self.playlist:
+                        logging.debug("No current video, loading")
                         self.load_video(self.current_video_index)
 
                     if self.current_video:
