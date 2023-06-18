@@ -74,7 +74,6 @@ class WWVideoPlayer:
                     self.playback_thread.start()
 
     def stop(self):
-        logging.debug("Stopping before lock")
         with self.lock:
             if self.state != VideoPlayerState.STOPPED:
                 logging.debug("STOPPING")
@@ -86,7 +85,6 @@ class WWVideoPlayer:
                     self.playback_thread.join(timeout=1.0)  # Provide a timeout so it doesn't wait indefinitely
                     if self.playback_thread.is_alive():
                         logging.warning("Playback thread failed to stop, may lead to unstable state.")
-        logging.debug("Stopped after lock")
 
     def pause(self):
         with self.lock:
@@ -139,7 +137,6 @@ class WWVideoPlayer:
                         self.load_video(self.current_video_index)
 
                     if self.current_video:
-                        logging.debug("Updating current video")
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
