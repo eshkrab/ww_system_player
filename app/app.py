@@ -184,12 +184,15 @@ class PlayerApp:
             try:
                 # send player state
                 if self.sacn.brightness:
+                    logging.debug("Sending brightness: " + str(self.sacn.brightness))
                     await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
                 if self.video_player.fps:
+                    logging.debug("Sending fps: " + str(self.video_player.fps))
                     await self.pub_socket.send_string("fps "+str(self.video_player.fps))
                 if self.video_player.state:
                     await self.pub_socket.send_string("state "+str(self.video_player.state))
                 if self.video_player.mode:
+                    logging.debug("Sending mode: " + str(self.video_player.mode))
                     await self.pub_socket.send_string("mode "+str(self.video_player.mode))
                 if self.video_player.current_video:
                     await self.pub_socket.send_string("current_media "+str(self.video_player.current_video))
@@ -200,7 +203,8 @@ class PlayerApp:
         
             except Exception as e:
                 logging.error(f"A zmq run error occurred: {str(e)}")
-                await self.pub_socket.send_string(f"An error occurred: {str(e)}")
+            await asyncio.sleep(0.1)
+                #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
     async def process_message(self, message):
         logging.debug(f"Received message: {message}")
