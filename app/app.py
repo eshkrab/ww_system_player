@@ -183,18 +183,18 @@ class PlayerApp:
         while True:
             try:
                 # send player state
-                await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
-                await self.pub_socket.send_string("fps "+str(self.video_player.fps))
-                await self.pub_socket.send_string("state "+str(self.video_player.state))
+                #  await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
+                #  await self.pub_socket.send_string("fps "+str(self.video_player.fps))
+                #  await self.pub_socket.send_string("state "+str(self.video_player.state))
                 await self.pub_socket.send_string("mode "+str(self.video_player.mode))
-                await self.pub_socket.send_string("current_media "+str(self.video_player.get_current_video_name()))
+                #  await self.pub_socket.send_string("current_media "+str(self.video_player.get_current_video_name()))
                 #  pub_socket.send_string("")
 
             except zmq.ZMQError as zmq_error:
                 logging.error(f"ZMQ Error occurred: {str(zmq_error)}")
         
             except Exception as e:
-                logging.error(f"An error occurred: {str(e)}")
+                logging.error(f"A zmq run error occurred: {str(e)}")
                 await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
     async def process_message(self, message):
