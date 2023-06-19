@@ -251,7 +251,7 @@ class PlayerApp:
         tasks = [
             asyncio.create_task(self.pubUpdate()),
             asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
-            asyncio.create_task(self.listen_to_messages(self.serial_sub_socket))
+            asyncio.create_task(self.listen_to_messages(self.serial_sub_socket)),
             asyncio.create_task(self.monitor_socket(self.server_sub_socket)),
             asyncio.create_task(self.monitor_socket(self.serial_sub_socket))
         ]
