@@ -208,6 +208,8 @@ class PlayerApp:
             logging.debug("Received message: " + message)
             await self.process_message(sock, message)
 
+            await asyncio.sleep(0.01)
+
     async def run(self):
         # Create tasks to listen to messages from server and serial
         tasks = [
