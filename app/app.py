@@ -208,7 +208,7 @@ class PlayerApp:
 
  
     async def listen_to_messages(self, sock):
-        logging.debug("Listening to messages "+ str(sock))
+        logging.info("Started listening to messages "+ str(sock))
         while True:
             try:
                 logging.debug("Waiting for message")
@@ -221,7 +221,7 @@ class PlayerApp:
             await asyncio.sleep(0.01)
 
     async def pubUpdate(self):
-        logging.debug("Starting pubUpdate")
+        logging.info("Starting pubUpdate")
         while True:
             try:
                 # send player state
@@ -255,7 +255,7 @@ class PlayerApp:
             #  asyncio.create_task(self.monitor_socket(self.server_sub_socket)),
             #  asyncio.create_task(self.monitor_socket(self.serial_sub_socket))
         ]
-        logging.debug("Tasks created")
+        logging.info("Async tasks created")
 
         # Wait for all the tasks to complete
         await asyncio.gather(*tasks)
