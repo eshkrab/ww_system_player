@@ -167,10 +167,10 @@ class PlayerApp:
         return levels.get(level.upper(), logging.INFO)
 
 
-    def reset_socket(self, sub_socket):
+    def reset_socket(self, socket):
         logging.debug("Resetting socket")
         # close the current socket
-        sub_socket.close()
+        socket.close()
         # create a new socket
         new_sock = self.ctx.socket(zmq.SUB)
         logging.debug(f"Subscribing to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
@@ -195,21 +195,26 @@ class PlayerApp:
             # Check if it's been 1 minute since last message received
             if time.time() - LAST_MSG_TIME > 10:
                 logging.debug("Resetting socket")
-                sub_socket = reset_socket(sub_socket)
+                sub_socket = self.reset_socket(sub_socket)
                 LAST_MSG_TIME = time.time()
 
             await asyncio.sleep(1)
 
  
     async def listen_to_messages(self, sock):
+        logging.debug("Listening to messages "+ str(sock))
         while True:
             message = await sock.recv_string()
             await self.process_message(message)
 
     async def run(self):
-        asyncio.ensure_future(self.monitor_socket(self.server_sub_socket, LAST_MSG_TIME))
-        asyncio.ensure_future(self.listen_to_messages(self.server_sub_socket))
-        asyncio.ensure_future(self.listen_to_messages(self.serial_sub_socket))
+        # Create tasks to listen to messages from server and serial
+        tasks = [
+            asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
+            asyncio.create_task(self.listen_to_messages(self.serial_sub_socket))
+        ]
+        logging.debug("Tasks created")
+
         while True:
             try:
                 # send player state
@@ -232,6 +237,8 @@ class PlayerApp:
                 logging.error(f"A zmq run error occurred: {str(e)}")
             await asyncio.sleep(0.1)
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
+        # Wait for all the tasks to complete
+        await asyncio.gather(*tasks)
 
     async def process_message(self, message):
         logging.debug(f"Received message: {message}")
