@@ -205,6 +205,7 @@ class PlayerApp:
         logging.debug("Listening to messages "+ str(sock))
         while True:
             message = await sock.recv_string()
+            logging.debug("Received message: " + message)
             await self.process_message(sock, message)
 
     async def run(self):
@@ -217,6 +218,7 @@ class PlayerApp:
 
         while True:
             try:
+                logging.debug("sending player state")
                 # send player state
                 if self.sacn.brightness:
                     await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
