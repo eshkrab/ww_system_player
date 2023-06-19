@@ -218,7 +218,6 @@ class PlayerApp:
 
         while True:
             try:
-                logging.debug("sending player state")
                 # send player state
                 if self.sacn.brightness:
                     await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
