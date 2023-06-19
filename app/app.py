@@ -1,4 +1,5 @@
 from os import name
+import time
 import zmq
 import zmq.asyncio
 import asyncio
@@ -8,6 +9,8 @@ import json
 #  from modules.colorlight import ColorLightDisplay
 from modules.ww_player import WWVideoPlayer, VideoPlayerState, VideoPlayerMode
 from modules.sacn_send import SacnSend
+
+LAST_MSG_TIME = time.time()
 
 class PlayerApp:
     def __init__(self, config):
@@ -79,6 +82,10 @@ class PlayerApp:
         logging.debug("Player app initialized")
         self.video_player.play()
 
+
+###############################################################
+###############################################################
+
     async def play(self, params):
         self.video_player.play()
 
@@ -146,6 +153,8 @@ class PlayerApp:
         #  #  await self.sock.send_string(self.video_player.current_video)
         pass
 
+###############################################################
+###############################################################
 
     def get_log_level(self, level):
         levels = {
@@ -157,20 +166,40 @@ class PlayerApp:
         }
         return levels.get(level.upper(), logging.INFO)
 
-    def reset_socket(self):
+
+    def reset_socket(self, sub_socket):
         logging.debug("Resetting socket")
-        #  # close the current socket
-        #  self.sock.close()
-        #  # create a new socket
-        #  new_sock = self.ctx.socket(zmq.REP)
-        #  new_sock.setsockopt(zmq.RECONNECT_IVL, 1000)  # set reconnect interval to 1s
-        #  new_sock.setsockopt(zmq.RECONNECT_IVL_MAX, 5000)  # set max reconnect interval to 5s
-        #  # bind the new socket
-        #  try:
-        #      new_sock.bind(f"tcp://{self.config['zmq']['ip_player']}:{self.config['zmq']['port']}")
-        #  except zmq.ZMQError as zmq_error:
-        #      logging.error(f"ZMQ Error occurred during socket reset: {str(zmq_error)}")
-        #  return new_sock
+        # close the current socket
+        sub_socket.close()
+        # create a new socket
+        new_sock = self.ctx.socket(zmq.SUB)
+        logging.debug(f"Subscribing to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
+
+        # connect the new socket
+        try:
+            logging.debug(f"OPENING UP SOCKET AGAIN to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
+            new_sock.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")  
+            new_sock.setsockopt_string(zmq.SUBSCRIBE, "")
+        except zmq.ZMQError as zmq_error:
+            logging.error(f"Subscribing to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
+            logging.error(f"ZMQ Error occurred during socket reset: {str(zmq_error)}")
+        return new_sock
+
+
+    async def monitor_socket(self, sub_socket, LAST_MSG_TIME):
+        #monitor sub_socket and if it's been too long since LAST_MSG_TIME, reset the socket
+        logging.debug("Monitoring socket")
+        while True:
+
+            logging.debug(f"Time since last message: {time.time() - LAST_MSG_TIME}")
+            # Check if it's been 1 minute since last message received
+            if time.time() - LAST_MSG_TIME > 10:
+                logging.debug("Resetting socket")
+                sub_socket = reset_socket(sub_socket)
+                LAST_MSG_TIME = time.time()
+
+            await asyncio.sleep(1)
+
  
     async def listen_to_messages(self, sock):
         while True:
@@ -178,6 +207,7 @@ class PlayerApp:
             await self.process_message(message)
 
     async def run(self):
+        asyncio.ensure_future(self.monitor_socket(self.server_sub_socket, LAST_MSG_TIME))
         asyncio.ensure_future(self.listen_to_messages(self.server_sub_socket))
         asyncio.ensure_future(self.listen_to_messages(self.serial_sub_socket))
         while True:
