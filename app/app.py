@@ -204,11 +204,15 @@ class PlayerApp:
     async def listen_to_messages(self, sock):
         logging.debug("Listening to messages "+ str(sock))
         while True:
-            message = await sock.recv_string()
-            logging.debug("Received message: " + message)
-            await self.process_message(sock, message)
+            try:
+                message = await sock.recv_string()
+                logging.debug("Received message: " + message)
+                await self.process_message(sock, message)
+            except Exception as e:
+                logging.error("Error processing message: "+ str(e))
 
             await asyncio.sleep(0.01)
+
 
     async def run(self):
         # Create tasks to listen to messages from server and serial
@@ -256,7 +260,6 @@ class PlayerApp:
                 logging.warning(f"Unknown command received: {command}")
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
-            await self.sock.send_string(f"Error processing message: {str(e)}")
 
 
 
