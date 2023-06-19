@@ -186,17 +186,23 @@ class PlayerApp:
         return new_sock
 
 
-    async def monitor_socket(self, sub_socket, LAST_MSG_TIME):
+    async def monitor_socket(self, sub_socket):
         #monitor sub_socket and if it's been too long since LAST_MSG_TIME, reset the socket
+        LAST_MSG_TIME = time.time()
         logging.debug("Monitoring socket")
         while True:
 
             logging.debug(f"Time since last message: {time.time() - LAST_MSG_TIME}")
-            # Check if it's been 1 minute since last message received
             if time.time() - LAST_MSG_TIME > 10:
                 logging.debug("Resetting socket")
-                sub_socket = self.reset_socket(sub_socket)
-                LAST_MSG_TIME = time.time()
+                fut = asyncio.ensure_future(sub_socket.recv())
+                try:
+                    resp = await asyncio.wait_for(fut, timeout=0.5)  # Close the previous socket only after a short time-out
+                    LAST_MSG_TIME = time.time()
+                    logging.debug("New message received, not resetting the socket!")
+                except asyncio.TimeoutError:
+                    sub_socket = self.reset_socket(sub_socket)
+                    LAST_MSG_TIME = time.time()
 
             await asyncio.sleep(1)
 
@@ -205,6 +211,7 @@ class PlayerApp:
         logging.debug("Listening to messages "+ str(sock))
         while True:
             try:
+                logging.debug("Waiting for message")
                 message = await sock.recv_string()
                 logging.debug("Received message: " + message)
                 await self.process_message(sock, message)
@@ -213,15 +220,8 @@ class PlayerApp:
 
             await asyncio.sleep(0.01)
 
-
-    async def run(self):
-        # Create tasks to listen to messages from server and serial
-        tasks = [
-            asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
-            asyncio.create_task(self.listen_to_messages(self.serial_sub_socket))
-        ]
-        logging.debug("Tasks created")
-
+    async def pubUpdate(self):
+        logging.debug("Starting pubUpdate")
         while True:
             try:
                 # send player state
@@ -244,6 +244,19 @@ class PlayerApp:
                 logging.error(f"A zmq run error occurred: {str(e)}")
             await asyncio.sleep(0.1)
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
+
+
+    async def run(self):
+        # Create tasks to listen to messages from server and serial
+        tasks = [
+            asyncio.create_task(self.pubUpdate()),
+            asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
+            asyncio.create_task(self.listen_to_messages(self.serial_sub_socket))
+            asyncio.create_task(self.monitor_socket(self.server_sub_socket)),
+            asyncio.create_task(self.monitor_socket(self.serial_sub_socket))
+        ]
+        logging.debug("Tasks created")
+
         # Wait for all the tasks to complete
         await asyncio.gather(*tasks)
 
