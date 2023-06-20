@@ -179,12 +179,17 @@ class PlayerApp:
                 if self.video_player.fps:
                     await self.pub_socket.send_string("fps "+str(self.video_player.fps))
                 if self.video_player.state:
-                    await self.pub_socket.send_string("state "+str(self.video_player.state))
-                if self.video_player.mode:
-                    await self.pub_socket.send_string("mode "+str(self.video_player.mode))
-                if self.video_player.current_video:
-                    await self.pub_socket.send_string("current_media "+str(self.video_player.current_video))
-                #  pub_socket.send_string("")
+
+                    state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
+                    if self.video_player.state == VideoPlayerState.STOPPED:
+                        state = "stopped"
+                    logging.debug("Received get_state: " + state)
+                    await self.pub_socket.send_string("state "+str(state))
+                #  if self.video_player.mode:
+                #      await self.pub_socket.send_string("mode "+str(self.video_player.mode))
+                #  if self.video_player.current_video:
+                #      await self.pub_socket.send_string("current_media "+str(self.video_player.current_video))
+                #  #  pub_socket.send_string("")
 
             except zmq.ZMQError as zmq_error:
                 logging.error(f"ZMQ Error occurred: {str(zmq_error)}")

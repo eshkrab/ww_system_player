@@ -27,7 +27,7 @@ class VideoPlayerMode(Enum):
     REPEAT_NONE = 3
 
 class WWVideoPlayer:
-    def __init__(self, ws_queue, video_dir: str, fps: int = 30, bind_address: str = "localhost",
+    def __init__(self, ws_queue, video_dir: str, fps: int = 30, 
                  display_callback: Optional[Callable[[np.array], None]] = None):
         self.video_dir = video_dir
         self.ws_queue = ws_queue
@@ -46,14 +46,6 @@ class WWVideoPlayer:
         self.playback_thread.start()
         self.playback_thread.join()
 
-        #  ###### SACN ######
-        #  self.sender = sacn.sACNsender(bind_address)
-        #  for i in range(1, 31):
-        #      self.sender.activate_output(i)  # start sending out data in the 1st universe
-        #      self.sender[i].multicast = True
-        #  self.sender.start()
-        #
-        #  atexit.register(self.sender.stop)
         self.stop_event = threading.Event()  
 
         #  self.load_playlist()
