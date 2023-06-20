@@ -205,16 +205,23 @@ class PlayerApp:
 
     async def run(self):
 
-        await socket_connect_backoff(self.server_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
-
-        await socket_connect_backoff(self.serial_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
-
-        # Create tasks to listen to messages from server and serial
-        tasks = [
-            asyncio.create_task(listen_to_messages(self.server_sub_socket, self.process_message)),
-            asyncio.create_task(listen_to_messages(self.serial_sub_socket, self.process_message)),
-            asyncio.create_task(self.pubUpdate()),
-        ]
+        await asyncio.gather(
+            socket_connect_backoff(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub']),
+            socket_connect_backoff(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub']),
+            listen_to_messages(self.server_sub_socket, self.process_message),
+            listen_to_messages(self.serial_sub_socket, self.process_message),
+            self.pubUpdate()
+        )
+        #  await socket_connect_backoff(self.server_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
+        #
+        #  await socket_connect_backoff(self.serial_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
+        #
+        #  # Create tasks to listen to messages from server and serial
+        #  tasks = [
+        #      asyncio.create_task(listen_to_messages(self.server_sub_socket, self.process_message)),
+        #      asyncio.create_task(listen_to_messages(self.serial_sub_socket, self.process_message)),
+        #      asyncio.create_task(self.pubUpdate()),
+        #  ]
         logging.info("Async tasks created")
 
         # Wait for all the tasks to complete
