@@ -79,8 +79,7 @@ class PlayerApp:
         if not self.dummy_key:
             self.sacn = SacnSend(config['sacn']['bind_address'], dummy=self.dummy_key, brightness=config['brightness_level'], multicast = config['sacn']['multicast'] == 1 , universe_count=config['sacn']['universe_count'])
 
-        #  self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], display_callback=self.sacn.send_frame)
-        self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], )
+        self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], display_callback=self.sacn.send_frame)
 
         logging.debug("Player app initialized")
         self.video_player.play()
