@@ -97,13 +97,16 @@ class PlayerApp:
 ###############################################################
 
     async def play(self, params):
+        logging.debug("Received play")
         self.video_player.play()
 
     async def pause(self, params):
+        logging.debug("Received pause")
         self.video_player.pause()
 
     async def stop(self, params):
         self.video_player.stop()
+        logging.debug("Received stop")
 
     async def restart(self, params):
         logging.debug("Received restart")
@@ -203,7 +206,6 @@ class PlayerApp:
         try:
             while True:
                 message = await sub_sock.recv_string()
-                logging.debug(f"Received message: {message}")
                 await process_message(message)
                 await asyncio.sleep(0.1)
 
