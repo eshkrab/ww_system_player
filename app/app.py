@@ -202,9 +202,7 @@ class PlayerApp:
 
         try:
             while True:
-                logging.debug("Waiting for message")
                 message = await sub_sock.recv_string()
-                logging.debug("Received message: " + message)
                 process_message(message)
                 await asyncio.sleep(0.1)
 
@@ -213,12 +211,11 @@ class PlayerApp:
             sub_sock.close()
 
     async def process_message(self, message):
-        logging.debug(f"Received message: {message}")
         try:
             command = message.split(' ', 1)[0]
-            logging.debug(f"Received command: {command}")
 
             if command in self.command_dict:  # check if command exists in command_dict
+                logging.debug(f"Received command: {command}")
                 await self.command_dict[command](message)
             else:
                 logging.warning(f"Unknown command received: {command}")
