@@ -204,9 +204,7 @@ class PlayerApp:
 
 
     async def run(self):
-        socket_connect_backoff(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub']),
 
-        socket_connect_backoff(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub']),
         await asyncio.gather(
             socket_connect_backoff(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub']),
             socket_connect_backoff(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub']),
