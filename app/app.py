@@ -27,10 +27,12 @@ class PlayerApp:
 
         # Subscribe to the server app
         self.server_sub_socket = self.ctx.socket(zmq.SUB)
-        #  socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
+        socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
+        self.server_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
         # Subscribe to the serial app
         self.serial_sub_socket = self.ctx.socket(zmq.SUB)
-        #  socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
+        socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
+        self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
         self.ws_queue = asyncio.Queue()
 
