@@ -191,8 +191,28 @@ class PlayerApp:
             await asyncio.sleep(0.1)
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
+    async def subscribe_to_messages(self, ip_connect, port, process_message):
+        logging.info("Started listening to messages")
 
-    async def process_message(self, sock, message):
+        ctx = zmq.asyncio.Context.instance()
+        sub_sock = ctx.socket(zmq.SUB)
+        sub_sock.connect(f"tcp://{ip_connect}:{port}")
+        sub_sock.setsockopt_string(zmq.SUBSCRIBE, "")
+        logging.debug("socket port: "+ str(sub_sock.getsockopt(zmq.LAST_ENDPOINT)))
+
+        try:
+            while True:
+                logging.debug("Waiting for message")
+                message = await sub_sock.recv_string()
+                logging.debug("Received message: " + message)
+                process_message(message)
+                await asyncio.sleep(0.1)
+
+        finally:
+            sub_sock.setsockopt(zmq.LINGER, 0)
+            sub_sock.close()
+
+    async def process_message(self, message):
         logging.debug(f"Received message: {message}")
         try:
             command = message.split(' ', 1)[0]
@@ -201,7 +221,6 @@ class PlayerApp:
             if command in self.command_dict:  # check if command exists in command_dict
                 await self.command_dict[command](message)
             else:
-                await sock.send_string("Unknown command")
                 logging.warning(f"Unknown command received: {command}")
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
@@ -209,12 +228,9 @@ class PlayerApp:
 
     async def run(self):
 
-        socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
-        socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
-        logging.info("Sockets connected")
         await asyncio.gather(
-            listen_to_messages(self.server_sub_socket, self.process_message),
-            listen_to_messages(self.serial_sub_socket, self.process_message),
+            self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_serial_pub'], self.process_message),
+            self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_server_pub'], self.process_message),
             self.pubUpdate()
         )
         logging.info("Async tasks created")
