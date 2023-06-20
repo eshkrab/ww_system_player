@@ -1,3 +1,7 @@
+
+>>> user
+this is the app that is not properly recieving messages from server or serial apps (it has received messages from serial in the past but not with current setup of code). connection has been texted, there are logs at the bottom, and it's been tested that both serial and server send out zmq
+
 from os import name
 import time
 import zmq
@@ -252,7 +256,7 @@ class PlayerApp:
     async def run(self):
         # Create tasks to listen to messages from server and serial
         tasks = [
-            #  asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
+            asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
             asyncio.create_task(self.listen_to_messages(self.serial_sub_socket)),
             asyncio.create_task(self.pubUpdate()),
             #  asyncio.create_task(self.monitor_socket(self.server_sub_socket)),
@@ -290,3 +294,26 @@ if __name__ == "__main__":
     app = PlayerApp(config)
     asyncio.run(app.run())
 
+
+this is the log output
+player_1  | DEBUG:root:tcp://localhost:5556
+player_1  | DEBUG:root:tcp://localhost:5557
+player_1  | DEBUG:asyncio:Using selector: EpollSelector
+player_1  | DEBUG:root:sacn address: 192.168.86.127
+player_1  | INFO:sacn:Bind sender thread to IP:192.168.86.127 Port:5568
+player_1  | INFO:sacn:Started sACN sending/sender thread
+player_1  | DEBUG:root:Player app initialized
+player_1  | DEBUG:root:PLAYING
+player_1  | DEBUG:root:Starting playback thread
+player_1  | DEBUG:root:No playlist, loading
+player_1  | DEBUG:asyncio:Using selector: EpollSelector
+player_1  | INFO:root:Async tasks created
+player_1  | INFO:root:Started listening to messages <zmq.asyncio.Socket(zmq.SUB) at 0x7f7c56ffa0>
+player_1  | DEBUG:root:socket port: b'tcp://localhost:5556'
+player_1  | DEBUG:root:Waiting for message
+player_1  | INFO:root:Started listening to messages <zmq.asyncio.Socket(zmq.SUB) at 0x7f7c57c160>
+player_1  | DEBUG:root:No current video, loading
+player_1  | DEBUG:root:socket port: b'tcp://localhost:5557'
+player_1  | DEBUG:root:LOADING VIDEO content/circle_out.ww
+player_1  | DEBUG:root:Waiting for message
+player_1  | INFO:root:Starting pubUpdate
