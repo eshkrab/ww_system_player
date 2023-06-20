@@ -12,9 +12,9 @@ async def socket_connect_backoff(sub_socket, ip_connect, port):
     max_delay = 30.0
     while True:
         try:
-            logging.info(f"Connecting to tcp://{ip_connect}:{port}")
             sub_socket.connect(f"tcp://{ip_connect}:{port}")
             sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+            logging.info(f"Connected to tcp://{ip_connect}:{port}")
             break
         except zmq.ZMQError:
             logging.error("Unable to establish connection, retrying in {} seconds...".format(delay))
