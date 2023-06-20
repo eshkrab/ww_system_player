@@ -9,6 +9,7 @@ import json
 #  from modules.colorlight import ColorLightDisplay
 from modules.ww_player import WWVideoPlayer, VideoPlayerState, VideoPlayerMode
 from modules.sacn_send import SacnSend
+from modules.zmqcomm import socket_connect_backoff, listen_to_messages
 
 LAST_MSG_TIME = time.time()
 
@@ -26,16 +27,8 @@ class PlayerApp:
 
         # Subscribe to the server app
         self.server_sub_socket = self.ctx.socket(zmq.SUB)
-        logging.debug(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_server_pub']}")
-        self.server_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_server_pub']}")  
-        self.server_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
-
         # Subscribe to the serial app
         self.serial_sub_socket = self.ctx.socket(zmq.SUB)
-        logging.debug(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")
-        self.serial_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")  
-        self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
-        self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "imu")
 
         self.ws_queue = asyncio.Queue()
 
@@ -83,6 +76,17 @@ class PlayerApp:
 
         logging.debug("Player app initialized")
         self.video_player.play()
+
+    def get_log_level(self, level):
+        levels = {
+            'DEBUG': logging.DEBUG,
+            'INFO': logging.INFO,
+            'WARNING': logging.WARNING,
+            'ERROR': logging.ERROR,
+            'CRITICAL': logging.CRITICAL
+        }
+        return levels.get(level.upper(), logging.INFO)
+
 
 
 ###############################################################
@@ -158,71 +162,6 @@ class PlayerApp:
 ###############################################################
 ###############################################################
 
-    def get_log_level(self, level):
-        levels = {
-            'DEBUG': logging.DEBUG,
-            'INFO': logging.INFO,
-            'WARNING': logging.WARNING,
-            'ERROR': logging.ERROR,
-            'CRITICAL': logging.CRITICAL
-        }
-        return levels.get(level.upper(), logging.INFO)
-
-
-    def reset_socket(self, socket):
-        logging.debug("Resetting socket")
-        # close the current socket
-        socket.close()
-        # create a new socket
-        new_sock = self.ctx.socket(zmq.SUB)
-        logging.debug(f"Subscribing to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
-
-        # connect the new socket
-        try:
-            logging.debug(f"OPENING UP SOCKET AGAIN to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
-            new_sock.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")  
-            new_sock.setsockopt_string(zmq.SUBSCRIBE, "")
-        except zmq.ZMQError as zmq_error:
-            logging.error(f"Subscribing to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
-            logging.error(f"ZMQ Error occurred during socket reset: {str(zmq_error)}")
-        return new_sock
-
-
-    async def monitor_socket(self, sub_socket):
-        #monitor sub_socket and if it's been too long since LAST_MSG_TIME, reset the socket
-        LAST_MSG_TIME = time.time()
-        logging.debug("Monitoring socket")
-        while True:
-
-            logging.debug(f"Time since last message: {time.time() - LAST_MSG_TIME}")
-            if time.time() - LAST_MSG_TIME > 10:
-                logging.debug("Resetting socket")
-                fut = asyncio.ensure_future(sub_socket.recv())
-                try:
-                    resp = await asyncio.wait_for(fut, timeout=0.5)  # Close the previous socket only after a short time-out
-                    LAST_MSG_TIME = time.time()
-                    logging.debug("New message received, not resetting the socket!")
-                except asyncio.TimeoutError:
-                    sub_socket = self.reset_socket(sub_socket)
-                    LAST_MSG_TIME = time.time()
-
-            await asyncio.sleep(1)
-
- 
-    async def listen_to_messages(self, sock):
-        logging.info("Started listening to messages "+ str(sock))
-        logging.debug("socket port: "+ str(sock.getsockopt(zmq.LAST_ENDPOINT)))
-        while True:
-            try:
-                logging.debug("Waiting for message")
-                message = await sock.recv_string()
-                logging.debug("Received message: " + message)
-                await self.process_message(sock, message)
-            except Exception as e:
-                logging.error("Error processing message: "+ str(e))
-
-            await asyncio.sleep(0.01)
-
     async def pubUpdate(self):
         logging.info("Starting pubUpdate")
         while True:
@@ -249,20 +188,6 @@ class PlayerApp:
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
 
-    async def run(self):
-        # Create tasks to listen to messages from server and serial
-        tasks = [
-            #  asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
-            asyncio.create_task(self.listen_to_messages(self.serial_sub_socket)),
-            asyncio.create_task(self.pubUpdate()),
-            #  asyncio.create_task(self.monitor_socket(self.server_sub_socket)),
-            #  asyncio.create_task(self.monitor_socket(self.serial_sub_socket))
-        ]
-        logging.info("Async tasks created")
-
-        # Wait for all the tasks to complete
-        await asyncio.gather(*tasks)
-
     async def process_message(self, sock, message):
         logging.debug(f"Received message: {message}")
         try:
@@ -277,6 +202,23 @@ class PlayerApp:
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
 
+
+    async def run(self):
+
+        asyncio.run(socket_connect_backoff(self.server_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_server_pub']))
+        asyncio.run(socket_connect_backoff(self.serial_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_serial_pub']))
+        logging.info("Connecting to server and serial")
+
+        # Create tasks to listen to messages from server and serial
+        tasks = [
+            asyncio.create_task(listen_to_messages(self.server_sub_socket, self.process_message)),
+            asyncio.create_task(listen_to_messages(self.serial_sub_socket, self.process_message)),
+            asyncio.create_task(self.pubUpdate()),
+        ]
+        logging.info("Async tasks created")
+
+        # Wait for all the tasks to complete
+        await asyncio.gather(*tasks)
 
 
 def load_config(config_file):
