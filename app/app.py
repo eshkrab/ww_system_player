@@ -9,7 +9,7 @@ import json
 #  from modules.colorlight import ColorLightDisplay
 from modules.ww_player import WWVideoPlayer, VideoPlayerState, VideoPlayerMode
 from modules.sacn_send import SacnSend
-from modules.zmqcomm import socket_connect_backoff, listen_to_messages
+from modules.zmqcomm import socket_connect, listen_to_messages
 
 LAST_MSG_TIME = time.time()
 
@@ -27,8 +27,10 @@ class PlayerApp:
 
         # Subscribe to the server app
         self.server_sub_socket = self.ctx.socket(zmq.SUB)
+        socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
         # Subscribe to the serial app
         self.serial_sub_socket = self.ctx.socket(zmq.SUB)
+        socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
 
         self.ws_queue = asyncio.Queue()
 
@@ -205,27 +207,14 @@ class PlayerApp:
 
     async def run(self):
 
+            #  socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub']),
+            #  socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub']),
         await asyncio.gather(
-            socket_connect_backoff(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub']),
-            socket_connect_backoff(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub']),
             listen_to_messages(self.server_sub_socket, self.process_message),
             listen_to_messages(self.serial_sub_socket, self.process_message),
             self.pubUpdate()
         )
-        #  await socket_connect_backoff(self.server_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
-        #
-        #  await socket_connect_backoff(self.serial_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
-        #
-        #  # Create tasks to listen to messages from server and serial
-        #  tasks = [
-        #      asyncio.create_task(listen_to_messages(self.server_sub_socket, self.process_message)),
-        #      asyncio.create_task(listen_to_messages(self.serial_sub_socket, self.process_message)),
-        #      asyncio.create_task(self.pubUpdate()),
-        #  ]
         logging.info("Async tasks created")
-
-        # Wait for all the tasks to complete
-        await asyncio.gather(*tasks)
 
 
 def load_config(config_file):
