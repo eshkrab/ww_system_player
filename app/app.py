@@ -26,11 +26,13 @@ class PlayerApp:
 
         # Subscribe to the server app
         self.server_sub_socket = self.ctx.socket(zmq.SUB)
+        logging.debug(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_server_pub']}")
         self.server_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_server_pub']}")  
         self.server_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
         # Subscribe to the serial app
         self.serial_sub_socket = self.ctx.socket(zmq.SUB)
+        logging.debug(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")
         self.serial_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")  
         self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
@@ -209,6 +211,7 @@ class PlayerApp:
  
     async def listen_to_messages(self, sock):
         logging.info("Started listening to messages "+ str(sock))
+        logging.debug("socket port: "+ str(sock.getsockopt(zmq.LAST_ENDPOINT)))
         while True:
             try:
                 logging.debug("Waiting for message")
@@ -249,9 +252,9 @@ class PlayerApp:
     async def run(self):
         # Create tasks to listen to messages from server and serial
         tasks = [
-            asyncio.create_task(self.pubUpdate()),
             asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
             asyncio.create_task(self.listen_to_messages(self.serial_sub_socket)),
+            asyncio.create_task(self.pubUpdate()),
             #  asyncio.create_task(self.monitor_socket(self.server_sub_socket)),
             #  asyncio.create_task(self.monitor_socket(self.serial_sub_socket))
         ]
