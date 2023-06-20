@@ -203,6 +203,7 @@ class PlayerApp:
         try:
             while True:
                 message = await sub_sock.recv_string()
+                logging.debug(f"Received message: {message}")
                 process_message(message)
                 await asyncio.sleep(0.1)
 
