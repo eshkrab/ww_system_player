@@ -35,6 +35,7 @@ class PlayerApp:
         logging.debug(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")
         self.serial_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")  
         self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "imu")
 
         self.ws_queue = asyncio.Queue()
 
