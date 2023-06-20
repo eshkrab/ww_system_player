@@ -27,10 +27,10 @@ class PlayerApp:
 
         # Subscribe to the server app
         self.server_sub_socket = self.ctx.socket(zmq.SUB)
-        socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
+        #  socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
         # Subscribe to the serial app
         self.serial_sub_socket = self.ctx.socket(zmq.SUB)
-        socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
+        #  socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
 
         self.ws_queue = asyncio.Queue()
 
@@ -207,8 +207,9 @@ class PlayerApp:
 
     async def run(self):
 
-            #  socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub']),
-            #  socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub']),
+        socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
+        socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
+        logging.info("Sockets connected")
         await asyncio.gather(
             listen_to_messages(self.server_sub_socket, self.process_message),
             listen_to_messages(self.serial_sub_socket, self.process_message),
