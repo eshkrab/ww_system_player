@@ -197,7 +197,7 @@ class PlayerApp:
         
             except Exception as e:
                 logging.error(f"A zmq run error occurred: {str(e)}")
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.1)
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
     async def subscribe_to_messages(self, ip_connect, port, process_message):
