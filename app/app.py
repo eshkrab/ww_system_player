@@ -205,8 +205,8 @@ class PlayerApp:
 
     async def run(self):
 
-        asyncio.run(socket_connect_backoff(self.server_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_server_pub']))
-        asyncio.run(socket_connect_backoff(self.serial_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_serial_pub']))
+        await socket_connect_backoff(self.server_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
+        await socket_connect_backoff(self.serial_sub_socket,config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
         logging.info("Connecting to server and serial")
 
         # Create tasks to listen to messages from server and serial
