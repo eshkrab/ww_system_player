@@ -98,30 +98,30 @@ class PlayerApp:
 
     async def play(self, params):
         logging.debug("Received play")
-        self.video_player.play()
         state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
         if self.video_player.state == VideoPlayerState.STOPPED:
             state = "stopped"
         msg = "state "+str(state)
         await self.pub_socket.send_string(msg)
+        self.video_player.play()
 
     async def pause(self, params):
         logging.debug("Received pause")
-        self.video_player.pause()
         state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
         if self.video_player.state == VideoPlayerState.STOPPED:
             state = "stopped"
         msg = "state "+str(state)
         await self.pub_socket.send_string(msg)
+        self.video_player.pause()
 
     async def stop(self, params):
-        self.video_player.stop()
         logging.debug("Received stop")
         state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
         if self.video_player.state == VideoPlayerState.STOPPED:
             state = "stopped"
         msg = "state "+str(state)
         await self.pub_socket.send_string(msg)
+        self.video_player.stop()
 
     async def restart(self, params):
         logging.debug("Received restart")
