@@ -151,6 +151,7 @@ class PlayerApp:
 
     async def get_brightness(self, params):
         #  await self.sock.send_string(str(self.sacn.brightness))
+        await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
         pass
 
     async def set_fps(self, params):
@@ -161,6 +162,7 @@ class PlayerApp:
     
     async def get_fps(self, params):
         #  await self.sock.send_string(str(self.video_player.fps))
+        await self.pub_socket.send_string("fps "+str(self.sacn.fps))
         pass
 
     async def repeat(self, params):
@@ -211,7 +213,7 @@ class PlayerApp:
         
             except Exception as e:
                 logging.error(f"A zmq run error occurred: {str(e)}")
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
     async def subscribe_to_messages(self, ip_connect, port, process_message):
