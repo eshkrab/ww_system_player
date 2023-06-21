@@ -148,7 +148,6 @@ class PlayerApp:
         if brightness is not None:
             #  self.display.brightness_level = int(brightness)
             self.sacn.brightness= int(brightness)
-            logging.debug(" set_brightness: " + str(brightness))
 
     async def get_brightness(self, params):
         #  await self.sock.send_string(str(self.sacn.brightness))
@@ -214,7 +213,7 @@ class PlayerApp:
         
             except Exception as e:
                 logging.error(f"A zmq run error occurred: {str(e)}")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
     async def subscribe_to_messages(self, ip_connect, port, process_message):
