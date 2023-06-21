@@ -184,7 +184,6 @@ class PlayerApp:
                     if self.video_player.state == VideoPlayerState.STOPPED:
                         state = "stopped"
                     msg = "state "+str(state)
-                    logging.debug("Sending: " + msg)
                     await self.pub_socket.send_string(msg)
                 #  if self.video_player.mode:
                 #      await self.pub_socket.send_string("mode "+str(self.video_player.mode))
