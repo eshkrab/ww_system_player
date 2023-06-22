@@ -200,6 +200,7 @@ class WWVideoPlayer:
     def apply_fade(self, frame):
         # Ease in and out of the fade
         fade = (1.0 - np.cos(self.fade_factor * np.pi)) / 2.0
+        fade = fade.astype(np.uint8)
         return np.round(frame * fade).astype(np.uint8)
 
     def fade_in(self):
