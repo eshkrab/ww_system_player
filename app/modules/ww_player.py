@@ -16,19 +16,22 @@ from typing import Callable, Optional, List, Dict, Union
 
 from modules.ww_utils import WWFile
 
+
 class VideoPlayerState(Enum):
     PLAYING = 1
     STOPPED = 2
     PAUSED = 3
+
 
 class VideoPlayerMode(Enum):
     REPEAT = 1
     REPEAT_ONE = 2
     REPEAT_NONE = 3
 
+
 class WWVideoPlayer:
-    def __init__(self, ws_queue, video_dir: str, fps: int = 30, 
-                 display_callback: Optional[Callable[[np.array], None]] = None):
+
+    def __init__(self, ws_queue, video_dir: str, fps: int = 30, display_callback: Optional[Callable[[np.array], None]] = None):
         self.video_dir = video_dir
         self.ws_queue = ws_queue
         self.fps = fps
@@ -37,18 +40,20 @@ class WWVideoPlayer:
         self.current_video = None
         self.playlist: List[Dict[str, Union[str, VideoPlayerMode]]] = []
         self.playlist_path = os.path.join(video_dir, "playlist.json")
+        self.fade_factor = 1.0
+        self.fade_speed = 0.01
 
         self.lock = threading.Lock()
         self.current_video_index = 0
         self.display_callback = display_callback
-        
+
         self.playback_thread = threading.Thread(target=lambda: None)
         self.playback_thread.start()
         self.playback_thread.join()
 
-        self.stop_event = threading.Event()  
+        self.stop_event = threading.Event()
 
-        #  self.load_playlist()
+        self.load_playlist()
 
     def get_current_video_name(self):
         filepath = self.playlist[self.current_video_index]["filepath"]
@@ -90,26 +95,57 @@ class WWVideoPlayer:
 
     def next_video(self):
         with self.lock:
+            self.fade_factor = 1.0
+            self.fade_out()
             self.current_video_index = (self.current_video_index + 1) % len(self.playlist)
             self.load_video(self.current_video_index)
+            self.fade_in()
 
     def prev_video(self):
         with self.lock:
+            self.fade_factor = 1.0
+            self.fade_out()
             self.current_video_index = (self.current_video_index - 1) % len(self.playlist)
             self.load_video(self.current_video_index)
+            self.fade_in()
 
     def restart_video(self):
         with self.lock:
+            self.fade_factor = 1.0
+            self.fade_out()
             self.load_video(self.current_video_index)
+            self.fade_in()
+
+    def play_by_name(self, name: str) -> bool:
+        with self.lock:
+            for i, item in enumerate(self.playlist):
+                if os.path.basename(item["filepath"]) == name:
+                    self.fade_factor = 1.0
+                    self.fade_out()
+                    self.current_video_index = i
+                    self.load_video(self.current_video_index)
+                    self.fade_in()
+                    return True
+            return False
+
+    def play_by_index(self, index: int) -> bool:
+        with self.lock:
+            if 0 <= index < len(self.playlist):
+                self.fade_factor = 1.0
+                self.fade_out()
+                self.current_video_index = index
+                self.load_video(self.current_video_index)
+                self.fade_in()
+                return True
+            return False
 
     def load_video(self, index):
-        playlist = self.playlist["playlist"]
+        playlist = self.playlist
         filepath = playlist[index]["filepath"]
         logging.debug("LOADING VIDEO %s", filepath)
         self.current_video = WWFile(filepath)
-        #  self.current_video.start()
-        #  if self.display_callback:
-        #      self.display_callback(self.current_video)
+        self.fade_factor = 0.0
+        self.fade_in()
 
     def playback_loop(self):
         while not self.stop_event.is_set():
@@ -132,53 +168,49 @@ class WWVideoPlayer:
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
+                            # apply fading to the frame here.
+                            frame = self.apply_fade(frame)
                             if self.display_callback:
                                 self.display_callback(frame)
 
                         else:
-                            self.current_video = None
-                            if self.mode == VideoPlayerMode.REPEAT_ONE:
-                                self.restart_video()
-                            elif self.mode == VideoPlayerMode.REPEAT:
-                                self.next_video()
-                            elif self.mode == VideoPlayerMode.REPEAT_NONE:
-                                if self.current_video_index < len(self.playlist["playlist"]) - 1:
+                            # Fade out
+                            if self.fade_factor > 0.0:
+                                self.fade_factor -= self.fade_speed
+                            else:
+                                self.current_video = None
+                                if self.mode == VideoPlayerMode.REPEAT_ONE:
+                                    self.restart_video()
+                                elif self.mode == VideoPlayerMode.REPEAT:
                                     self.next_video()
-                                else:
-                                    self.stop()
+                                elif self.mode == VideoPlayerMode.REPEAT_NONE:
+                                    if self.current_video_index < len(self.playlist) - 1:
+                                        self.next_video()
+                                    else:
+                                        self.stop()
 
-
-            if self.stop_event.wait(1 / self.fps):  
+            if self.stop_event.wait(1 / self.fps):
                 # returns immediately if the event is set, else waits for the timeout
                 logging.debug("Stop event set, breaking")
                 break
 
-    def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
-        # Convert WW animation frame to sACN data format
-        dmx_data = []
-        for i in range(0, len(frame), 510):
-            chunk = frame[i:i+510]
-            chunk_data = array.array('B')
-            for j in range(0, len(chunk), 3):
-                chunk_data.append(chunk[j])
-            dmx_data.append(chunk_data)
-        return dmx_data
+    def apply_fade(self, frame):
+        # Ease in and out of the fade
+        fade = (1.0 - np.cos(self.fade_factor * np.pi)) / 2.0
+        return np.round(frame * fade).astype(np.uint8)
 
-    def send_sacn_data(self, data: List[List[int]]):
-        for i in range(len(data)):
-            self.sender[i+1].dmx_data = data[i]
+    def fade_in(self):
+        while self.fade_factor < 1.0:
+            self.fade_factor += self.fade_speed
+            time.sleep(0.01)
+        self.fade_factor = 1.0
 
-    #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[int]:
-    #      # Convert WW animation frame to sACN data format
-    #      dmx_data = array.array('B')
-    #      for i in range(0, len(frame), 3):
-    #          dmx_data.append(frame[i])
-    #      return dmx_data
-    #
-    #  def send_sacn_data(self, data: List[int]):
-    #      for i in range(1, 31):
-    #          self.sender[i].dmx_data = array.array('B', data)
-    #
+    def fade_out(self):
+        while self.fade_factor > 0.0:
+            self.fade_factor -= self.fade_speed
+            time.sleep(0.01)
+        self.fade_factor = 0.0
+
     def load_playlist(self):
         if os.path.exists(self.playlist_path):
             with open(self.playlist_path, "r") as f:
@@ -190,5 +222,3 @@ class WWVideoPlayer:
     def save_playlist(self):
         with open(self.playlist_path, "w") as f:
             json.dump(self.playlist, f)
-
-
