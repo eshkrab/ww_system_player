@@ -141,7 +141,6 @@ class WWVideoPlayer:
 
     def load_video(self, index):
         playlist = self.playlist
-        logging.debug("LOADING VIDEO %s", playlist[index]["filepath"])
         logging.debug("PLAYLIST %s", playlist)
         filepath = playlist[index]["filepath"]
         logging.debug("LOADING VIDEO %s", filepath)
