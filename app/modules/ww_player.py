@@ -66,7 +66,8 @@ class WWVideoPlayer:
                 self.state = VideoPlayerState.PLAYING
                 if not self.playback_thread.is_alive():
                     self.stop_event.clear()
-                    self.playback_thread = threading.Thread(target=self.playback_loop)
+                    #  self.playback_thread = threading.Thread(target=self.playback_loop)
+                    self.playback_thread = threading.Thread(target=self.send_dummy_data)
                     logging.debug("Starting playback thread")
                     self.playback_thread.start()
 
@@ -151,7 +152,10 @@ class WWVideoPlayer:
         self.fade_in()
 
     def playback_loop(self):
+        fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
         while not self.stop_event.is_set():
+            start_time = time.monotonic()
+            with self.lock:
             with self.lock:
                 if self.state == VideoPlayerState.STOPPED:
                     break
@@ -192,6 +196,18 @@ class WWVideoPlayer:
                                     else:
                                         self.stop()
 
+            # Measure fps
+            end_time = time.monotonic()
+            fps = 1 / (end_time - start_time)
+            fps_history.append(fps)
+
+            # Print fps every minute
+            if time.time() - self.last_fps_print_time >= 60:
+                avg_fps = sum(fps_history) / len(fps_history)
+                print(f"Average fps for the last minute: {avg_fps:.2f}")
+                self.last_fps_print_time = time.time()
+
+
             if self.stop_event.wait(1 / self.fps):
                 # returns immediately if the event is set, else waits for the timeout
                 logging.debug("Stop event set, breaking")
@@ -226,3 +242,15 @@ class WWVideoPlayer:
     def save_playlist(self):
         with open(self.playlist_path, "w") as f:
             json.dump(self.playlist, f)
+
+    def send_dummy_data(self):
+        start_time = time.time()
+        while True:
+            # Calculate rainbow fade from time
+            elapsed_time = time.time() - start_time
+            rainbow = np.array([[(np.sin(0.3 * i + elapsed_time) + 1) * 127 for i in range(300)]], dtype=np.uint8)
+            # Send dummy data to display_callback
+            if self.display_callback:
+                self.display_callback(rainbow)
+            # Wait 1/30 seconds (assuming fps = 30)
+            time.sleep(1 / self.fps)
