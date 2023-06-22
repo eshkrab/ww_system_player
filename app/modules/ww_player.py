@@ -163,7 +163,7 @@ class WWVideoPlayer:
                         self.load_playlist()
 
                     if not self.current_video and self.playlist:
-                        logging.debug("No current video, loading")
+                        logging.debug("No current video, loading %d", self.current_video_index )
                         self.load_video(self.current_video_index)
 
                     if self.current_video:

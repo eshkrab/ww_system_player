@@ -162,7 +162,7 @@ class PlayerApp:
     
     async def get_fps(self, params):
         #  await self.sock.send_string(str(self.video_player.fps))
-        await self.pub_socket.send_string("fps "+str(self.sacn.fps))
+        #  await self.pub_socket.send_string("fps "+str(self.sacn.fps))
         pass
 
     async def repeat(self, params):
