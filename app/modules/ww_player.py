@@ -140,7 +140,7 @@ class WWVideoPlayer:
             return False
 
     def load_video(self, index):
-        playlist = self.playlist
+        playlist = self.playlist['playlist']
         logging.debug("PLAYLIST %s", playlist)
         logging.debug("INDEX %s", index)
         logging.debug("PLAYLIST ITEM %s", playlist[index])
