@@ -54,6 +54,7 @@ class WWVideoPlayer:
         self.stop_event = threading.Event()
 
         self.load_playlist()
+        self.last_fps_print_time = time.time()  # Initialize the attribute
 
     def get_current_video_name(self):
         filepath = self.playlist[self.current_video_index]["filepath"]
