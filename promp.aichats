@@ -1,3 +1,7 @@
+
+>>> user
+this is the app that is not properly recieving messages from server or serial apps (it has received messages from serial in the past but not with current setup of code). connection has been texted, there are logs at the bottom, and it's been tested that both serial and server send out zmq
+
 from os import name
 import time
 import zmq
@@ -9,7 +13,6 @@ import json
 #  from modules.colorlight import ColorLightDisplay
 from modules.ww_player import WWVideoPlayer, VideoPlayerState, VideoPlayerMode
 from modules.sacn_send import SacnSend
-from modules.zmqcomm import socket_connect, listen_to_messages
 
 LAST_MSG_TIME = time.time()
 
@@ -27,11 +30,14 @@ class PlayerApp:
 
         # Subscribe to the server app
         self.server_sub_socket = self.ctx.socket(zmq.SUB)
-        socket_connect(self.server_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_server_pub'])
+        logging.debug(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_server_pub']}")
+        self.server_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_server_pub']}")  
         self.server_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+
         # Subscribe to the serial app
         self.serial_sub_socket = self.ctx.socket(zmq.SUB)
-        socket_connect(self.serial_sub_socket, config['zmq']['ip_connect'], config['zmq']['port_serial_pub'])
+        logging.debug(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")
+        self.serial_sub_socket.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_serial_pub']}")  
         self.serial_sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
         self.ws_queue = asyncio.Queue()
@@ -76,51 +82,23 @@ class PlayerApp:
         if not self.dummy_key:
             self.sacn = SacnSend(config['sacn']['bind_address'], dummy=self.dummy_key, brightness=config['brightness_level'], multicast = config['sacn']['multicast'] == 1 , universe_count=config['sacn']['universe_count'])
 
-        self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], display_callback=self.sacn.send_frame)
+        #  self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], display_callback=self.sacn.send_frame)
+        self.video_player = WWVideoPlayer(self.ws_queue, video_dir=config['video_dir'], )
 
         logging.debug("Player app initialized")
         self.video_player.play()
-
-    def get_log_level(self, level):
-        levels = {
-            'DEBUG': logging.DEBUG,
-            'INFO': logging.INFO,
-            'WARNING': logging.WARNING,
-            'ERROR': logging.ERROR,
-            'CRITICAL': logging.CRITICAL
-        }
-        return levels.get(level.upper(), logging.INFO)
-
 
 
 ###############################################################
 ###############################################################
 
     async def play(self, params):
-        logging.debug("Received play")
-        state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
-        if self.video_player.state == VideoPlayerState.STOPPED:
-            state = "stopped"
-        msg = "state "+str(state)
-        await self.pub_socket.send_string(msg)
         self.video_player.play()
 
     async def pause(self, params):
-        logging.debug("Received pause")
-        state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
-        if self.video_player.state == VideoPlayerState.STOPPED:
-            state = "stopped"
-        msg = "state "+str(state)
-        await self.pub_socket.send_string(msg)
         self.video_player.pause()
 
     async def stop(self, params):
-        logging.debug("Received stop")
-        state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
-        if self.video_player.state == VideoPlayerState.STOPPED:
-            state = "stopped"
-        msg = "state "+str(state)
-        await self.pub_socket.send_string(msg)
         self.video_player.stop()
 
     async def restart(self, params):
@@ -151,7 +129,6 @@ class PlayerApp:
 
     async def get_brightness(self, params):
         #  await self.sock.send_string(str(self.sacn.brightness))
-        await self.pub_socket.send_string("brightness "+str(self.sacn.brightness))
         pass
 
     async def set_fps(self, params):
@@ -162,7 +139,6 @@ class PlayerApp:
     
     async def get_fps(self, params):
         #  await self.sock.send_string(str(self.video_player.fps))
-        #  await self.pub_socket.send_string("fps "+str(self.sacn.fps))
         pass
 
     async def repeat(self, params):
@@ -186,6 +162,71 @@ class PlayerApp:
 ###############################################################
 ###############################################################
 
+    def get_log_level(self, level):
+        levels = {
+            'DEBUG': logging.DEBUG,
+            'INFO': logging.INFO,
+            'WARNING': logging.WARNING,
+            'ERROR': logging.ERROR,
+            'CRITICAL': logging.CRITICAL
+        }
+        return levels.get(level.upper(), logging.INFO)
+
+
+    def reset_socket(self, socket):
+        logging.debug("Resetting socket")
+        # close the current socket
+        socket.close()
+        # create a new socket
+        new_sock = self.ctx.socket(zmq.SUB)
+        logging.debug(f"Subscribing to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
+
+        # connect the new socket
+        try:
+            logging.debug(f"OPENING UP SOCKET AGAIN to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
+            new_sock.connect(f"tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")  
+            new_sock.setsockopt_string(zmq.SUBSCRIBE, "")
+        except zmq.ZMQError as zmq_error:
+            logging.error(f"Subscribing to tcp://{config['zmq']['ip_connect']}:{config['zmq']['port_player_pub']}")
+            logging.error(f"ZMQ Error occurred during socket reset: {str(zmq_error)}")
+        return new_sock
+
+
+    async def monitor_socket(self, sub_socket):
+        #monitor sub_socket and if it's been too long since LAST_MSG_TIME, reset the socket
+        LAST_MSG_TIME = time.time()
+        logging.debug("Monitoring socket")
+        while True:
+
+            logging.debug(f"Time since last message: {time.time() - LAST_MSG_TIME}")
+            if time.time() - LAST_MSG_TIME > 10:
+                logging.debug("Resetting socket")
+                fut = asyncio.ensure_future(sub_socket.recv())
+                try:
+                    resp = await asyncio.wait_for(fut, timeout=0.5)  # Close the previous socket only after a short time-out
+                    LAST_MSG_TIME = time.time()
+                    logging.debug("New message received, not resetting the socket!")
+                except asyncio.TimeoutError:
+                    sub_socket = self.reset_socket(sub_socket)
+                    LAST_MSG_TIME = time.time()
+
+            await asyncio.sleep(1)
+
+ 
+    async def listen_to_messages(self, sock):
+        logging.info("Started listening to messages "+ str(sock))
+        logging.debug("socket port: "+ str(sock.getsockopt(zmq.LAST_ENDPOINT)))
+        while True:
+            try:
+                logging.debug("Waiting for message")
+                message = await sock.recv_string()
+                logging.debug("Received message: " + message)
+                await self.process_message(sock, message)
+            except Exception as e:
+                logging.error("Error processing message: "+ str(e))
+
+            await asyncio.sleep(0.01)
+
     async def pubUpdate(self):
         logging.info("Starting pubUpdate")
         while True:
@@ -196,66 +237,50 @@ class PlayerApp:
                 if self.video_player.fps:
                     await self.pub_socket.send_string("fps "+str(self.video_player.fps))
                 if self.video_player.state:
-
-                    state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
-                    if self.video_player.state == VideoPlayerState.STOPPED:
-                        state = "stopped"
-                    msg = "state "+str(state)
-                    await self.pub_socket.send_string(msg)
-                #  if self.video_player.mode:
-                #      await self.pub_socket.send_string("mode "+str(self.video_player.mode))
-                #  if self.video_player.current_video:
-                #      await self.pub_socket.send_string("current_media "+str(self.video_player.current_video))
-                #  #  pub_socket.send_string("")
+                    await self.pub_socket.send_string("state "+str(self.video_player.state))
+                if self.video_player.mode:
+                    await self.pub_socket.send_string("mode "+str(self.video_player.mode))
+                if self.video_player.current_video:
+                    await self.pub_socket.send_string("current_media "+str(self.video_player.current_video))
+                #  pub_socket.send_string("")
 
             except zmq.ZMQError as zmq_error:
                 logging.error(f"ZMQ Error occurred: {str(zmq_error)}")
         
             except Exception as e:
                 logging.error(f"A zmq run error occurred: {str(e)}")
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
                 #  await self.pub_socket.send_string(f"An error occurred: {str(e)}")
 
-    async def subscribe_to_messages(self, ip_connect, port, process_message):
-        logging.info("Started listening to messages")
 
-        ctx = zmq.asyncio.Context.instance()
-        sub_sock = ctx.socket(zmq.SUB)
-        sub_sock.connect(f"tcp://{ip_connect}:{port}")
-        sub_sock.setsockopt_string(zmq.SUBSCRIBE, "")
-        logging.debug("socket port: "+ str(sub_sock.getsockopt(zmq.LAST_ENDPOINT)))
+    async def run(self):
+        # Create tasks to listen to messages from server and serial
+        tasks = [
+            asyncio.create_task(self.listen_to_messages(self.server_sub_socket)),
+            asyncio.create_task(self.listen_to_messages(self.serial_sub_socket)),
+            asyncio.create_task(self.pubUpdate()),
+            #  asyncio.create_task(self.monitor_socket(self.server_sub_socket)),
+            #  asyncio.create_task(self.monitor_socket(self.serial_sub_socket))
+        ]
+        logging.info("Async tasks created")
 
-        try:
-            while True:
-                message = await sub_sock.recv_string()
-                await process_message(message)
-                await asyncio.sleep(0.1)
+        # Wait for all the tasks to complete
+        await asyncio.gather(*tasks)
 
-        finally:
-            sub_sock.setsockopt(zmq.LINGER, 0)
-            sub_sock.close()
-
-    async def process_message(self, message):
+    async def process_message(self, sock, message):
+        logging.debug(f"Received message: {message}")
         try:
             command = message.split(' ', 1)[0]
+            logging.debug(f"Received command: {command}")
 
             if command in self.command_dict:  # check if command exists in command_dict
-                logging.debug(f"Received command: {command}")
                 await self.command_dict[command](message)
             else:
+                await sock.send_string("Unknown command")
                 logging.warning(f"Unknown command received: {command}")
         except Exception as e:
             logging.error(f"Error processing message: {str(e)}")
 
-
-    async def run(self):
-
-        await asyncio.gather(
-            self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_serial_pub'], self.process_message),
-            self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_server_pub'], self.process_message),
-            self.pubUpdate()
-        )
-        logging.info("Async tasks created")
 
 
 def load_config(config_file):
@@ -269,3 +294,26 @@ if __name__ == "__main__":
     app = PlayerApp(config)
     asyncio.run(app.run())
 
+
+this is the log output
+player_1  | DEBUG:root:tcp://localhost:5556
+player_1  | DEBUG:root:tcp://localhost:5557
+player_1  | DEBUG:asyncio:Using selector: EpollSelector
+player_1  | DEBUG:root:sacn address: 192.168.86.127
+player_1  | INFO:sacn:Bind sender thread to IP:192.168.86.127 Port:5568
+player_1  | INFO:sacn:Started sACN sending/sender thread
+player_1  | DEBUG:root:Player app initialized
+player_1  | DEBUG:root:PLAYING
+player_1  | DEBUG:root:Starting playback thread
+player_1  | DEBUG:root:No playlist, loading
+player_1  | DEBUG:asyncio:Using selector: EpollSelector
+player_1  | INFO:root:Async tasks created
+player_1  | INFO:root:Started listening to messages <zmq.asyncio.Socket(zmq.SUB) at 0x7f7c56ffa0>
+player_1  | DEBUG:root:socket port: b'tcp://localhost:5556'
+player_1  | DEBUG:root:Waiting for message
+player_1  | INFO:root:Started listening to messages <zmq.asyncio.Socket(zmq.SUB) at 0x7f7c57c160>
+player_1  | DEBUG:root:No current video, loading
+player_1  | DEBUG:root:socket port: b'tcp://localhost:5557'
+player_1  | DEBUG:root:LOADING VIDEO content/circle_out.ww
+player_1  | DEBUG:root:Waiting for message
+player_1  | INFO:root:Starting pubUpdate

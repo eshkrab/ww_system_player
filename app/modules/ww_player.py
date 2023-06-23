@@ -7,29 +7,31 @@ import json
 import threading
 import logging
 import socket
-import atexit
+
 import numpy as np
 from enum import Enum
 from collections import deque
 from typing import Callable, Optional, List, Dict, Union
 
-import sacn
 
 from modules.ww_utils import WWFile
+
 
 class VideoPlayerState(Enum):
     PLAYING = 1
     STOPPED = 2
     PAUSED = 3
 
+
 class VideoPlayerMode(Enum):
     REPEAT = 1
     REPEAT_ONE = 2
     REPEAT_NONE = 3
 
+
 class WWVideoPlayer:
-    def __init__(self, ws_queue, video_dir: str, fps: int = 30,
-                 display_callback: Optional[Callable[[np.array], None]] = None):
+
+    def __init__(self, ws_queue, video_dir: str, fps: int = 30, display_callback: Optional[Callable[[np.array], None]] = None):
         self.video_dir = video_dir
         self.ws_queue = ws_queue
         self.fps = fps
@@ -38,9 +40,13 @@ class WWVideoPlayer:
         self.current_video = None
         self.playlist: List[Dict[str, Union[str, VideoPlayerMode]]] = []
         self.playlist_path = os.path.join(video_dir, "playlist.json")
+        self.fade_factor = 1.0
+        self.fade_speed = 0.01
+
         self.lock = threading.Lock()
         self.current_video_index = 0
         self.display_callback = display_callback
+<<<<<<< HEAD
         self.sender = sacn.sACNsender()
         logging.debug("sACN sender 30 universes")
         self.sender.activate_output(1)
@@ -53,8 +59,17 @@ class WWVideoPlayer:
         atexit.register(self.sender.stop)
         self.stop_event = threading.Event()  
         #  self.playback_thread = None
+=======
+
+        self.playback_thread = threading.Thread(target=lambda: None)
+        self.playback_thread.start()
+        self.playback_thread.join()
+
+        self.stop_event = threading.Event()
+>>>>>>> fades
 
         self.load_playlist()
+        self.last_fps_print_time = time.time()  # Initialize the attribute
 
     def get_current_video_name(self):
         filepath = self.playlist[self.current_video_index]["filepath"]
@@ -65,26 +80,25 @@ class WWVideoPlayer:
             if self.state != VideoPlayerState.PLAYING:
                 logging.debug("PLAYING")
                 self.state = VideoPlayerState.PLAYING
-                if not hasattr(self, "playback_thread") or not self.playback_thread.is_alive():
+                if not self.playback_thread.is_alive():
                     self.stop_event.clear()
                     self.playback_thread = threading.Thread(target=self.playback_loop)
+                    #  self.playback_thread = threading.Thread(target=self.send_dummy_data)
                     logging.debug("Starting playback thread")
                     self.playback_thread.start()
 
     def stop(self):
-        logging.debug("Stopping before lock")
         with self.lock:
             if self.state != VideoPlayerState.STOPPED:
                 logging.debug("STOPPING")
                 self.state = VideoPlayerState.STOPPED
                 self.playlist.clear()
                 self.current_video = None
-                if self.playback_thread and self.playback_thread.is_alive():
-                    logging.debug("Stopping playback thread")
+                if self.playback_thread.is_alive():
                     self.stop_event.set()
-                    self.playback_thread.join()
-                    self.playback_thread = None
-        logging.debug("Stopped after lock")
+                    self.playback_thread.join(timeout=1.0)  # Provide a timeout so it doesn't wait indefinitely
+                    if self.playback_thread.is_alive():
+                        logging.warning("Playback thread failed to stop, may lead to unstable state.")
 
     def pause(self):
         with self.lock:
@@ -98,50 +112,100 @@ class WWVideoPlayer:
 
     def next_video(self):
         with self.lock:
+            #  self.fade_factor = 1.0
+            #  self.fade_out()
             self.current_video_index = (self.current_video_index + 1) % len(self.playlist)
             self.load_video(self.current_video_index)
+            #  self.fade_in()
 
     def prev_video(self):
         with self.lock:
+            #  self.fade_factor = 1.0
+            #  self.fade_out()
             self.current_video_index = (self.current_video_index - 1) % len(self.playlist)
             self.load_video(self.current_video_index)
+            #  self.fade_in()
 
     def restart_video(self):
         with self.lock:
+            #  self.fade_factor = 1.0
+            #  self.fade_out()
             self.load_video(self.current_video_index)
+            #  self.fade_in()
+
+    def play_by_name(self, name: str) -> bool:
+        with self.lock:
+            for i, item in enumerate(self.playlist):
+                if os.path.basename(item["filepath"]) == name:
+                    #  self.fade_factor = 1.0
+                    #  self.fade_out()
+                    self.current_video_index = i
+                    self.load_video(self.current_video_index)
+                    #  self.fade_in()
+                    return True
+            return False
+
+    def play_by_index(self, index: int) -> bool:
+        with self.lock:
+            if 0 <= index < len(self.playlist):
+                #  self.fade_factor = 1.0
+                #  self.fade_out()
+                self.current_video_index = index
+                self.load_video(self.current_video_index)
+                #  self.fade_in()
+                return True
+            return False
 
     def load_video(self, index):
-        playlist = self.playlist["playlist"]
+        playlist = self.playlist['playlist']
+        logging.debug("PLAYLIST %s", playlist)
+        logging.debug("INDEX %s", index)
+        logging.debug("PLAYLIST ITEM %s", playlist[index])
         filepath = playlist[index]["filepath"]
         logging.debug("LOADING VIDEO %s", filepath)
         self.current_video = WWFile(filepath)
-        #  self.current_video.start()
-        #  if self.display_callback:
-        #      self.display_callback(self.current_video)
+        #  self.fade_factor = 0.0
+        #  self.fade_in()
 
     def playback_loop(self):
-        #  while True:
+        fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
         while not self.stop_event.is_set():
+<<<<<<< HEAD
             logging.debug("Playback loop")
+=======
+            start_time = time.monotonic()
+>>>>>>> fades
             with self.lock:
                 if self.state == VideoPlayerState.STOPPED:
                     break
-
                 elif self.state == VideoPlayerState.PAUSED:
                     time.sleep(0.01)
                     continue
-
                 elif self.state == VideoPlayerState.PLAYING:
+                    if not self.playlist:
+                        logging.debug("No playlist, loading")
+                        self.load_playlist()
+
                     if not self.current_video and self.playlist:
+                        logging.debug("No current video, loading")
                         self.load_video(self.current_video_index)
 
                     if self.current_video:
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
+<<<<<<< HEAD
                             logging.debug("Sending frame")
                             sacn_data = self.convert_frame_to_sacn_data(frame)
                             self.send_sacn_data(sacn_data)
+=======
+                            if self.display_callback:
+                                callback_start_time = time.monotonic()
+                                self.display_callback(frame)
+                                callback_end_time = time.monotonic()
+                                callback_time = callback_end_time - callback_start_time
+
+>>>>>>> fades
                         else:
                             logging.debug("Frame is None")
                             self.current_video = None
@@ -154,12 +218,28 @@ class WWVideoPlayer:
                                     self.next_video()
                                 else:
                                     self.stop()
-                                #  self.stop()
 
-            if self.stop_event.wait(1 / self.fps):  # returns immediately if the event is set, else waits for the timeout
+                        #  time.sleep(1/self.fps)
+
+            # Measure fps
+            end_time = time.monotonic()
+            #  logging.debug(f"Frame took {end_time - start_time:.2f} seconds")
+            fps = 1 / (end_time - start_time)
+            fps_history.append(fps)
+
+            # Print fps every minute
+            if time.time() - self.last_fps_print_time >= 30:
+                avg_fps = sum(fps_history) / len(fps_history)
+                logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
+                fps_history.clear()
+                self.last_fps_print_time = time.time()
+
+            
+            # Returns immediately if the clear event is set, else waits for the timeout
+            if self.stop_event.wait(1 / self.fps):  
                 logging.debug("Stop event set, breaking")
-                #  pass
                 break
+<<<<<<< HEAD
             #  time.sleep(1 / self.fps)
 
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[int]:
@@ -177,6 +257,8 @@ class WWVideoPlayer:
         #      self.sender[i].dmx_data = array.array('B', data)
         #      #  self.sender.send_dmx(i, data)
         #      logging.debug("Sending DMX data to universe %d", i)
+=======
+>>>>>>> fades
 
     def load_playlist(self):
         if os.path.exists(self.playlist_path):
@@ -190,4 +272,19 @@ class WWVideoPlayer:
         with open(self.playlist_path, "w") as f:
             json.dump(self.playlist, f)
 
-
+    def send_dummy_data(self):
+        start_time = time.time()
+        while True:
+            # Calculate rainbow fade from time
+            elapsed_time = time.time() - start_time
+            rainbow = np.array([[(np.sin(0.3 * i + elapsed_time) + 1) * 127 for i in range(300)]], dtype=np.uint8)
+            # Send dummy data to display_callback
+            if self.display_callback:
+                if isinstance(rainbow, np.ndarray):
+                    # Convert numpy array to a list of integers
+                    scaled_data = [round(byte * self.fade_factor) for byte in rainbow[0]]
+                    self.display_callback(scaled_data)
+                else:
+                    self.display_callback(rainbow)
+            # Wait 1/30 seconds (assuming fps = 30)
+            time.sleep(1 / self.fps)
