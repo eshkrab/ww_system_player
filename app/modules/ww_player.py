@@ -66,8 +66,8 @@ class WWVideoPlayer:
                 self.state = VideoPlayerState.PLAYING
                 if not self.playback_thread.is_alive():
                     self.stop_event.clear()
-                    #  self.playback_thread = threading.Thread(target=self.playback_loop)
-                    self.playback_thread = threading.Thread(target=self.send_dummy_data)
+                    self.playback_thread = threading.Thread(target=self.playback_loop)
+                    #  self.playback_thread = threading.Thread(target=self.send_dummy_data)
                     logging.debug("Starting playback thread")
                     self.playback_thread.start()
 
