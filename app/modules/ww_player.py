@@ -156,7 +156,6 @@ class WWVideoPlayer:
         while not self.stop_event.is_set():
             start_time = time.monotonic()
             with self.lock:
-            with self.lock:
                 if self.state == VideoPlayerState.STOPPED:
                     break
                 elif self.state == VideoPlayerState.PAUSED:
@@ -251,6 +250,11 @@ class WWVideoPlayer:
             rainbow = np.array([[(np.sin(0.3 * i + elapsed_time) + 1) * 127 for i in range(300)]], dtype=np.uint8)
             # Send dummy data to display_callback
             if self.display_callback:
-                self.display_callback(rainbow)
+                if isinstance(rainbow, np.ndarray):
+                    # Convert numpy array to a list of integers
+                    scaled_data = [round(byte * self.fade_factor) for byte in rainbow[0]]
+                    self.display_callback(scaled_data)
+                else:
+                    self.display_callback(rainbow)
             # Wait 1/30 seconds (assuming fps = 30)
             time.sleep(1 / self.fps)
