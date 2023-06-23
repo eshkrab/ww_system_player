@@ -9,6 +9,7 @@ class SacnSend:
     def __init__(self, bind_address = "127.0.0.1", universe_count=1, multicast=True, dummy=False, brightness = 50.0):
         self.multi = multicast
         self.sender = sacn.sACNsender(bind_address)
+        self.sender.fps = 60
         self.brightness = brightness
 
         for i in range(1, universe_count + 1):
@@ -31,12 +32,10 @@ class SacnSend:
 
     def send_sacn_data(self, data: List[List[int]]):
         for i in range(len(data)):
-            # scale data by brightness
-            #  scaled_data = [round(self.brightness / 255 * byte) for byte in data[i]]
-            scaled_data = [round(byte * float(self.brightness / 255.0)) for byte in data[i]]
-            #  if i == 0:
-            #      logging.debug(f"Sending universe {i+1} with data {scaled_data[0]}, og data {data[i][0]} brightness {self.brightness} ")
-            self.sender[i+1].dmx_data = scaled_data
+            #  # scale data by brightness
+            #  scaled_data = [round(byte * float(self.brightness / 255.0)) for byte in data[i]]
+            #  self.sender[i+1].dmx_data = scaled_data
+            self.sender[i+1].dmx_data = data[i]
 
     def send_frame(self, frame: np.array):
         data = self.convert_frame_to_sacn_data(frame)
