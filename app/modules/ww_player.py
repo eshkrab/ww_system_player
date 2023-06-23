@@ -176,7 +176,12 @@ class WWVideoPlayer:
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
                             if self.display_callback:
+                                callback_start_time = time.monotonic()
                                 self.display_callback(frame)
+                                callback_end_time = time.monotonic()
+                                callback_time = callback_end_time - callback_start_time
+                                logging.debug(f"Display callback took {callback_time:.2f} seconds")
+
 
                         else:
                             self.current_video = None
@@ -206,24 +211,6 @@ class WWVideoPlayer:
             if self.stop_event.wait(1 / self.fps):  
                 logging.debug("Stop event set, breaking")
                 break
-
-    def apply_fade(self, frame):
-        # Ease in and out of the fade
-        fade = (1.0 - np.cos(self.fade_factor * np.pi)) / 2.0
-        fade = fade.astype(np.uint8)
-        return np.round(frame * fade).astype(np.uint8)
-
-    def fade_in(self):
-        while self.fade_factor < 1.0:
-            self.fade_factor += self.fade_speed
-            time.sleep(0.01)
-        self.fade_factor = 1.0
-
-    def fade_out(self):
-        while self.fade_factor > 0.0:
-            self.fade_factor -= self.fade_speed
-            time.sleep(0.01)
-        self.fade_factor = 0.0
 
     def load_playlist(self):
         if os.path.exists(self.playlist_path):
