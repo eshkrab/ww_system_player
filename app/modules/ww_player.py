@@ -180,7 +180,7 @@ class WWVideoPlayer:
                                 self.display_callback(frame)
                                 callback_end_time = time.monotonic()
                                 callback_time = callback_end_time - callback_start_time
-                                logging.debug(f"Display callback took {callback_time:.2f} seconds")
+                                #  logging.debug(f"Display callback took {callback_time:.2f} seconds")
 
 
                         else:
@@ -197,12 +197,12 @@ class WWVideoPlayer:
 
             # Measure fps
             end_time = time.monotonic()
-            logging.debug(f"Frame took {end_time - start_time:.2f} seconds")
+            #  logging.debug(f"Frame took {end_time - start_time:.2f} seconds")
             fps = 1 / (end_time - start_time)
             fps_history.append(fps)
 
             # Print fps every minute
-            if time.time() - self.last_fps_print_time >= 60:
+            if time.time() - self.last_fps_print_time >= 10:
                 avg_fps = sum(fps_history) / len(fps_history)
                 logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
                 self.last_fps_print_time = time.time()
