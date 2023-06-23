@@ -24,7 +24,6 @@ class SacnSend:
 
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
         np_frame = np.frombuffer(frame, dtype=np.uint8)
-        logging.debug("frame type " + str(np_frame.dtype))
         #  brightness_normal = self.brightness / 255
         scaled_brightness = self.brightness / 255
         scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)

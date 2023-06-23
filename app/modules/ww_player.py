@@ -180,8 +180,6 @@ class WWVideoPlayer:
                                 self.display_callback(frame)
                                 callback_end_time = time.monotonic()
                                 callback_time = callback_end_time - callback_start_time
-                                logging.debug(f"Display callback took {callback_time:.2f} seconds")
-
 
                         else:
                             self.current_video = None
