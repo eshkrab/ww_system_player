@@ -97,47 +97,47 @@ class WWVideoPlayer:
 
     def next_video(self):
         with self.lock:
-            self.fade_factor = 1.0
-            self.fade_out()
+            #  self.fade_factor = 1.0
+            #  self.fade_out()
             self.current_video_index = (self.current_video_index + 1) % len(self.playlist)
             self.load_video(self.current_video_index)
-            self.fade_in()
+            #  self.fade_in()
 
     def prev_video(self):
         with self.lock:
-            self.fade_factor = 1.0
-            self.fade_out()
+            #  self.fade_factor = 1.0
+            #  self.fade_out()
             self.current_video_index = (self.current_video_index - 1) % len(self.playlist)
             self.load_video(self.current_video_index)
-            self.fade_in()
+            #  self.fade_in()
 
     def restart_video(self):
         with self.lock:
-            self.fade_factor = 1.0
-            self.fade_out()
+            #  self.fade_factor = 1.0
+            #  self.fade_out()
             self.load_video(self.current_video_index)
-            self.fade_in()
+            #  self.fade_in()
 
     def play_by_name(self, name: str) -> bool:
         with self.lock:
             for i, item in enumerate(self.playlist):
                 if os.path.basename(item["filepath"]) == name:
-                    self.fade_factor = 1.0
-                    self.fade_out()
+                    #  self.fade_factor = 1.0
+                    #  self.fade_out()
                     self.current_video_index = i
                     self.load_video(self.current_video_index)
-                    self.fade_in()
+                    #  self.fade_in()
                     return True
             return False
 
     def play_by_index(self, index: int) -> bool:
         with self.lock:
             if 0 <= index < len(self.playlist):
-                self.fade_factor = 1.0
-                self.fade_out()
+                #  self.fade_factor = 1.0
+                #  self.fade_out()
                 self.current_video_index = index
                 self.load_video(self.current_video_index)
-                self.fade_in()
+                #  self.fade_in()
                 return True
             return False
 
@@ -149,8 +149,8 @@ class WWVideoPlayer:
         filepath = playlist[index]["filepath"]
         logging.debug("LOADING VIDEO %s", filepath)
         self.current_video = WWFile(filepath)
-        self.fade_factor = 0.0
-        self.fade_in()
+        #  self.fade_factor = 0.0
+        #  self.fade_in()
 
     def playback_loop(self):
         fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
@@ -168,33 +168,27 @@ class WWVideoPlayer:
                         self.load_playlist()
 
                     if not self.current_video and self.playlist:
-                        logging.debug("No current video, loading %d", self.current_video_index )
+                        logging.debug("No current video, loading")
                         self.load_video(self.current_video_index)
 
                     if self.current_video:
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
-                            # apply fading to the frame here.
-                            #  frame = self.apply_fade(frame)
                             if self.display_callback:
                                 self.display_callback(frame)
 
                         else:
-                            # Fade out
-                            if self.fade_factor > 0.0:
-                                self.fade_factor -= self.fade_speed
-                            else:
-                                self.current_video = None
-                                if self.mode == VideoPlayerMode.REPEAT_ONE:
-                                    self.restart_video()
-                                elif self.mode == VideoPlayerMode.REPEAT:
+                            self.current_video = None
+                            if self.mode == VideoPlayerMode.REPEAT_ONE:
+                                self.restart_video()
+                            elif self.mode == VideoPlayerMode.REPEAT:
+                                self.next_video()
+                            elif self.mode == VideoPlayerMode.REPEAT_NONE:
+                                if self.current_video_index < len(self.playlist["playlist"]) - 1:
                                     self.next_video()
-                                elif self.mode == VideoPlayerMode.REPEAT_NONE:
-                                    if self.current_video_index < len(self.playlist) - 1:
-                                        self.next_video()
-                                    else:
-                                        self.stop()
+                                else:
+                                    self.stop()
 
             # Measure fps
             end_time = time.monotonic()
@@ -207,9 +201,9 @@ class WWVideoPlayer:
                 logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
                 self.last_fps_print_time = time.time()
 
-
-            if self.stop_event.wait(1 / self.fps):
-                # returns immediately if the event is set, else waits for the timeout
+            
+            # Returns immediately if the clear event is set, else waits for the timeout
+            if self.stop_event.wait(1 / self.fps):  
                 logging.debug("Stop event set, breaking")
                 break
 
