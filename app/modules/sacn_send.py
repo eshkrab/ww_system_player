@@ -23,10 +23,12 @@ class SacnSend:
 
 
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
-        logging.debug("frame type " + str(frame.dtype))
+        np_frame = np.frombuffer(frame, dtype=np.uint8)
+        logging.debug("frame type " + str(np_frame.dtype))
         #  brightness_normal = self.brightness / 255
-        scaled_brightness = int.from_bytes(self.brightness, byteorder='big') / 255
-        scaled_frame = (frame * scaled_brightness).astype(int)
+        scaled_brightness = self.brightness / 255
+        scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
+        scaled_frame = scaled_frame.tobytes()
 
         # Convert WW animation frame to sACN data format
         dmx_data = []
