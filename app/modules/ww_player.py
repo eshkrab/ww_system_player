@@ -46,27 +46,12 @@ class WWVideoPlayer:
         self.lock = threading.Lock()
         self.current_video_index = 0
         self.display_callback = display_callback
-<<<<<<< HEAD
-        self.sender = sacn.sACNsender()
-        logging.debug("sACN sender 30 universes")
-        self.sender.activate_output(1)
-        self.sender[1].multicast = True
-        #  for i in range(1, 31):
-        #      self.sender.activate_output(i)
-        #      self.sender[i].multicast = True
-        logging.debug("sACN sender activated")
-        self.sender.start()
-        atexit.register(self.sender.stop)
-        self.stop_event = threading.Event()  
-        #  self.playback_thread = None
-=======
 
         self.playback_thread = threading.Thread(target=lambda: None)
         self.playback_thread.start()
         self.playback_thread.join()
 
         self.stop_event = threading.Event()
->>>>>>> fades
 
         self.load_playlist()
         self.last_fps_print_time = time.time()  # Initialize the attribute
@@ -170,11 +155,7 @@ class WWVideoPlayer:
     def playback_loop(self):
         fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
         while not self.stop_event.is_set():
-<<<<<<< HEAD
-            logging.debug("Playback loop")
-=======
             start_time = time.monotonic()
->>>>>>> fades
             with self.lock:
                 if self.state == VideoPlayerState.STOPPED:
                     break
@@ -194,18 +175,12 @@ class WWVideoPlayer:
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
-<<<<<<< HEAD
-                            logging.debug("Sending frame")
-                            sacn_data = self.convert_frame_to_sacn_data(frame)
-                            self.send_sacn_data(sacn_data)
-=======
                             if self.display_callback:
                                 callback_start_time = time.monotonic()
                                 self.display_callback(frame)
                                 callback_end_time = time.monotonic()
                                 callback_time = callback_end_time - callback_start_time
 
->>>>>>> fades
                         else:
                             logging.debug("Frame is None")
                             self.current_video = None
@@ -239,26 +214,6 @@ class WWVideoPlayer:
             if self.stop_event.wait(1 / self.fps):  
                 logging.debug("Stop event set, breaking")
                 break
-<<<<<<< HEAD
-            #  time.sleep(1 / self.fps)
-
-    def convert_frame_to_sacn_data(self, frame: np.array) -> List[int]:
-        # Convert WW animation frame to sACN data format
-        # implementation goes here
-        dmx_data = array.array('B')
-        for i in range(0, len(frame), 3):
-            dmx_data.append(frame[i])
-        return dmx_data
-
-    def send_sacn_data(self, data: List[int]):
-        self.sender[1].dmx_data = array.array('B', data)
-        logging.debug("Sending DMX data to universe %d", 1)
-        #  for i in range(1, 30):
-        #      self.sender[i].dmx_data = array.array('B', data)
-        #      #  self.sender.send_dmx(i, data)
-        #      logging.debug("Sending DMX data to universe %d", i)
-=======
->>>>>>> fades
 
     def load_playlist(self):
         if os.path.exists(self.playlist_path):
