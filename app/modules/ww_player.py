@@ -177,7 +177,7 @@ class WWVideoPlayer:
                         if frame is not None:
                             if self.display_callback:
                                 callback_start_time = time.monotonic()
-                                self.display_callback(frame)
+                                #  self.display_callback(frame)
                                 callback_end_time = time.monotonic()
                                 callback_time = callback_end_time - callback_start_time
                                 #  logging.debug(f"Display callback took {callback_time:.2f} seconds")
@@ -194,6 +194,7 @@ class WWVideoPlayer:
                                     self.next_video()
                                 else:
                                     self.stop()
+                        time.sleep(1/self.fps)
 
             # Measure fps
             end_time = time.monotonic()
