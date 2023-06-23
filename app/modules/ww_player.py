@@ -202,7 +202,7 @@ class WWVideoPlayer:
             fps_history.append(fps)
 
             # Print fps every minute
-            if time.time() - self.last_fps_print_time >= 10:
+            if time.time() - self.last_fps_print_time >= 30:
                 avg_fps = sum(fps_history) / len(fps_history)
                 logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
                 fps_history.clear()
