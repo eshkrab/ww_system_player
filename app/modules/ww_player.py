@@ -197,6 +197,7 @@ class WWVideoPlayer:
 
             # Measure fps
             end_time = time.monotonic()
+            logging.debug(f"Frame took {end_time - start_time:.2f} seconds")
             fps = 1 / (end_time - start_time)
             fps_history.append(fps)
 
