@@ -176,7 +176,7 @@ class WWVideoPlayer:
                         frame = self.current_video.get_next_frame()
                         if frame is not None:
                             # apply fading to the frame here.
-                            frame = self.apply_fade(frame)
+                            #  frame = self.apply_fade(frame)
                             if self.display_callback:
                                 self.display_callback(frame)
 
@@ -204,7 +204,7 @@ class WWVideoPlayer:
             # Print fps every minute
             if time.time() - self.last_fps_print_time >= 60:
                 avg_fps = sum(fps_history) / len(fps_history)
-                print(f"Average fps for the last minute: {avg_fps:.2f}")
+                logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
                 self.last_fps_print_time = time.time()
 
 
