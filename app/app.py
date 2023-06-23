@@ -250,11 +250,11 @@ class PlayerApp:
 
     async def run(self):
 
-        await asyncio.gather(
-            self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_serial_pub'], self.process_message),
-            self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_server_pub'], self.process_message),
-            self.pubUpdate()
-        )
+        #  await asyncio.gather(
+        #      self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_serial_pub'], self.process_message),
+        #      self.subscribe_to_messages(config['zmq']['ip_connect'], config['zmq']['port_server_pub'], self.process_message),
+        #      self.pubUpdate()
+        #  )
         logging.info("Async tasks created")
 
 
