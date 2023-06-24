@@ -53,7 +53,7 @@ class PlayerApp:
             "set_fps": self.set_fps,
             "get_fps": self.get_fps,
             "get_current_media": self.get_current_video,
-            #  "set_playlist": self.set_playlist
+            "set_playlist": self.set_playlist
         }
 
 
@@ -90,7 +90,6 @@ class PlayerApp:
             'CRITICAL': logging.CRITICAL
         }
         return levels.get(level.upper(), logging.INFO)
-
 
 
 ###############################################################
@@ -134,6 +133,11 @@ class PlayerApp:
     async def next(self, params):
         logging.debug("Received next")
         self.video_player.next_video()
+
+    async def set_playlist(self, params):
+        logging.debug("Received set_playlist")
+        self.video_player.stop()
+        self.video_player.play()
 
     async def get_state(self, params):
         state = "playing" if self.video_player.state == VideoPlayerState.PLAYING else "paused"
