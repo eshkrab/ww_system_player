@@ -44,18 +44,18 @@ class SacnSend:
                 remaining_pixels = self.num_pixels - ((channel_count - 1) // 3)  # Calculate the remaining pixels for the current universe
                 universe = universe_count  # Store the current universe
 
-                if remaining_pixels >= 170:
-                    # If there are enough pixels to fill the universe, append a list of 512 values representing the universe count
-                    universe_data = [universe_count] * 510
-                    dmx_data.append(universe_data)
-                    channel_count += 510  # Increment the channel count by the number of channels used in the universe
-                else:
-                    # If there are not enough pixels to fill the universe, create a list with the remaining pixels
-                    universe_data = [universe_count] * (remaining_pixels * 3)
-
-                    # Append the universe data to the DMX data list
-                    dmx_data.append(universe_data)
-                    channel_count += (remaining_pixels * 3)  # Increment the channel count by the number of channels used by the remaining pixels
+                while remaining_pixels > 0:
+                    if remaining_pixels >= 170:
+                        universe_data = [universe_count] * 510
+                        dmx_data.append(universe_data)
+                        channel_count += (170 * 3)
+                        remaining_pixels -= 170
+                        universe_count += 1
+                    else:
+                        universe_data = [universe_count] * (remaining_pixels * 3)
+                        dmx_data.append(universe_data)
+                        channel_count += (remaining_pixels * 3)
+                        remaining_pixels = 0
 
                 logging.info(f"Strip: {strip + 1}, Universe: {universe}, Channel: {channel_count}")
                 universe_count += 1  # Increment the universe count for the next strip
