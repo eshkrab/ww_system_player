@@ -27,19 +27,11 @@ class SacnSend:
         self.sender.start()
         atexit.register(self.sender.stop)
 
-
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
         np_frame = np.frombuffer(frame, dtype=np.uint8)
-        #  brightness_normal = self.brightness / 255
         scaled_brightness = self.brightness / 255
         scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
         scaled_frame = scaled_frame.tobytes()
-
-        #  # Convert WW animation frame to sACN data format
-        #  dmx_data = []
-        #  for i in range(0, len(scaled_frame), 510):
-        #      chunk = scaled_frame[i:i+510]
-        #      dmx_data.append(list(chunk))
 
         dmx_data = []  # List to store the DMX data
         universe_count = 1  # Variable to keep track of the universe count
@@ -47,7 +39,7 @@ class SacnSend:
 
         for strip in range(self.num_strips):
             strip_universes = math.ceil(self.num_pixels / 170)  # Calculate the number of universes needed for the current strip
-            
+
             for _ in range(strip_universes):
                 remaining_pixels = self.num_pixels - ((channel_count - 1) // 3)  # Calculate the remaining pixels for the current universe
                 universe = universe_count  # Store the current universe
@@ -55,11 +47,11 @@ class SacnSend:
                 if remaining_pixels >= 170:
                     # If there are enough pixels to fill the universe, append a list of 512 values representing the universe count
                     dmx_data.append([universe_count] * 510)
-                    channel_count += (170 * 3)  # Increment the channel count by the number of channels used in the universe
+                    channel_count += 510  # Increment the channel count by the number of channels used in the universe
                 else:
                     # If there are not enough pixels to fill the universe, create a list with the remaining pixels
                     universe_data = [universe_count] * (remaining_pixels * 3)
-                    
+
                     # Append the universe data to the DMX data list
                     dmx_data.append(universe_data)
                     channel_count += (remaining_pixels * 3)  # Increment the channel count by the number of channels used by the remaining pixels
