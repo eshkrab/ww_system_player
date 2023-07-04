@@ -60,8 +60,8 @@ class SacnSend:
                 strip_universe_use_counter += 1
                 universe_count += 1  # move to next universe for either next part of strip or the new strip
                     
-            # Log how much of universes each strip used
-            logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes,  channel count: {channel_count}')
+            #  # Log how much of universes each strip used
+            #  logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes,  channel count: {channel_count}')
 
         # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
         return dmx_data
@@ -78,10 +78,10 @@ class SacnSend:
             if universe_data is not None:
                 # if data for this universe exists, send it
                 self.sender[universe_id].dmx_data = universe_data
-                if universe_id > 51:
-                    logging.debug(f'Universe {universe_id} data: {universe_data}')
-            else:
-                logging.warning(f'No data for universe {universe_id}')
+                #  if universe_id > 51:
+                #      logging.debug(f'Universe {universe_id} data: {universe_data}')
+            #  else:
+            #      logging.warning(f'No data for universe {universe_id}')
             #  else:
             #      # if no data for this universe, send zeros (off) to all channels
             #      self.sender[universe_id].dmx_data = [0] * 512
