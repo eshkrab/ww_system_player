@@ -77,6 +77,8 @@ class SacnSend:
             if universe_data is not None:
                 # if data for this universe exists, send it
                 self.sender[universe_id].dmx_data = universe_data
+            else:
+                logging.warning(f'No data for universe {universe_id}')
             #  else:
             #      # if no data for this universe, send zeros (off) to all channels
             #      self.sender[universe_id].dmx_data = [0] * 512
