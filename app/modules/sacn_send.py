@@ -60,17 +60,32 @@ class SacnSend:
                 universe_count += 1  # move to next universe for either next part of strip or the new strip
                     
             # Log how much of universes each strip used
-            logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes')
+            logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes, {strip_pixels_counter} pixels left, channel count: {channel_count}')
 
         # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
         return dmx_data
 
-    def send_sacn_data(self, data: List[List[int]]):
-        for i in range(len(data)):
-            self.sender[i+1].dmx_data = data[i]
-            #  # scale data by brightness
-            #  scaled_data = [round(byte * float(self.brightness / 255.0)) for byte in data[i]]
-            #  self.sender[i+1].dmx_data = scaled_data
+    def send_sacn_data(self, data: List[Tuple[int, List[int]]]):
+        # Transform list of tuples into dictionary
+        data_dict = {universe_id: universe_data for universe_id, universe_data in data}
+        
+        # Go through all senders
+        for i in range(len(self.sender)):
+            universe_id = i + 1
+            universe_data = data_dict.get(universe_id)
+            
+            if universe_data is not None:
+                # if data for this universe exists, send it
+                self.sender[universe_id].dmx_data = universe_data
+            else:
+                # if no data for this universe, send zeros (off) to all channels
+                self.sender[universe_id].dmx_data = [0] * 512
+    #  def send_sacn_data(self, data: List[List[int]]):
+    #      for i in range(len(data)):
+    #          self.sender[i+1].dmx_data = data[i]
+    #          #  # scale data by brightness
+    #          #  scaled_data = [round(byte * float(self.brightness / 255.0)) for byte in data[i]]
+    #          #  self.sender[i+1].dmx_data = scaled_data
 
     def send_frame(self, frame: np.array):
         data = self.convert_frame_to_sacn_data(frame)
