@@ -3,18 +3,24 @@ import atexit
 import array
 import logging
 import numpy as np
+import math 
+
 from typing import Callable, Optional, List, Dict, Union
 
 class SacnSend:
-    def __init__(self, bind_address = "127.0.0.1", universe_count=1, multicast=True, dummy=False, brightness = 50.0):
+    def __init__(self, bind_address = "127.0.0.1", num_strips=1, num_pixels=1, multicast=True, dummy=False, brightness = 50.0):
         self.multi = multicast
         self.sender = sacn.sACNsender(bind_address)
         self.sender.fps = 60
         self.brightness = brightness
+        self.num_strips = num_strips
+        self.num_pixels = num_pixels
+        self.universe_count = math.ceil( (num_strips * num_pixels * 3) / 510)
+        logging.info(f"sACN Number of pixels: {self.num_pixels}, Number of strips: {self.num_strips}, Universe count: {self.universe_count}")
 
-        for i in range(1, universe_count + 1):
+        for i in range(1, self.universe_count + 1):
             if not dummy:
-                self.sender.activate_output(i)  # start sending out data in the 1st universe
+                self.sender.activate_output(i) 
             if self.multi:
                 self.sender[i].multicast = True
 
@@ -29,11 +35,38 @@ class SacnSend:
         scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
         scaled_frame = scaled_frame.tobytes()
 
-        # Convert WW animation frame to sACN data format
-        dmx_data = []
-        for i in range(0, len(scaled_frame), 510):
-            chunk = scaled_frame[i:i+510]
-            dmx_data.append(list(chunk))
+        #  # Convert WW animation frame to sACN data format
+        #  dmx_data = []
+        #  for i in range(0, len(scaled_frame), 510):
+        #      chunk = scaled_frame[i:i+510]
+        #      dmx_data.append(list(chunk))
+
+        dmx_data = []  # List to store the DMX data
+        universe_count = 1  # Variable to keep track of the universe count
+        channel_count = 1  # Variable to keep track of the channel count
+
+        for strip in range(self.num_strips):
+            strip_universes = math.ceil(self.num_pixels / 170)  # Calculate the number of universes needed for the current strip
+            
+            for _ in range(strip_universes):
+                remaining_pixels = self.num_pixels - ((channel_count - 1) // 3)  # Calculate the remaining pixels for the current universe
+                universe = universe_count  # Store the current universe
+
+                if remaining_pixels >= 170:
+                    # If there are enough pixels to fill the universe, append a list of 512 values representing the universe count
+                    dmx_data.append([universe_count] * 510)
+                    channel_count += (170 * 3)  # Increment the channel count by the number of channels used in the universe
+                else:
+                    # If there are not enough pixels to fill the universe, create a list with the remaining pixels
+                    universe_data = [universe_count] * (remaining_pixels * 3)
+                    
+                    # Append the universe data to the DMX data list
+                    dmx_data.append(universe_data)
+                    channel_count += (remaining_pixels * 3)  # Increment the channel count by the number of channels used by the remaining pixels
+
+                logging.info(f"Strip: {strip + 1}, Universe: {universe}, Channel: {channel_count - (remaining_pixels * 3) - 1}")
+                universe_count += 1  # Increment the universe count for the next strip
+
         return dmx_data
 
     def send_sacn_data(self, data: List[List[int]]):
