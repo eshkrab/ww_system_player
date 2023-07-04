@@ -43,6 +43,7 @@ class SacnSend:
             
             # Keep track of used universes within strip
             strip_universe_use_counter = 0
+            channel_count = 1  # Reset channel count at the start of each strip
 
             # As long as we have pixels to arrange within DMX universes
             while strip_pixels_counter > 0:
@@ -60,7 +61,7 @@ class SacnSend:
                 universe_count += 1  # move to next universe for either next part of strip or the new strip
                     
             # Log how much of universes each strip used
-            #  logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes,  channel count: {channel_count}')
+            logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes,  channel count: {channel_count}')
 
         # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
         return dmx_data
