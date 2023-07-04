@@ -77,7 +77,7 @@ class SacnSend:
             if universe_data is not None:
                 # if data for this universe exists, send it
                 self.sender[universe_id].dmx_data = universe_data
-                if universe_id > 42 and universe_id < 50:
+                if universe_id > 51:
                     logging.debug(f'Universe {universe_id} data: {universe_data}')
             else:
                 logging.warning(f'No data for universe {universe_id}')
