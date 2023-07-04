@@ -46,7 +46,8 @@ class SacnSend:
 
                 if remaining_pixels >= 170:
                     # If there are enough pixels to fill the universe, append a list of 512 values representing the universe count
-                    dmx_data.append([universe_count] * 510)
+                    universe_data = [universe_count] * 510
+                    dmx_data.append(universe_data)
                     channel_count += 510  # Increment the channel count by the number of channels used in the universe
                 else:
                     # If there are not enough pixels to fill the universe, create a list with the remaining pixels
