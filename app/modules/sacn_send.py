@@ -57,7 +57,7 @@ class SacnSend:
                     dmx_data.append(universe_data)
                     channel_count += (remaining_pixels * 3)  # Increment the channel count by the number of channels used by the remaining pixels
 
-                logging.info(f"Strip: {strip + 1}, Universe: {universe}, Channel: {channel_count -  1}")
+                logging.info(f"Strip: {strip + 1}, Universe: {universe}, Channel: {channel_count}")
                 universe_count += 1  # Increment the universe count for the next strip
 
         return dmx_data
