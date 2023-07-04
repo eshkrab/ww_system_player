@@ -70,7 +70,7 @@ class SacnSend:
         data_dict = {universe_id: universe_data for universe_id, universe_data in data}
         
         # Go through all senders
-        for i in range(len(self.sender)):
+        for i in range(self.universe_count):
             universe_id = i + 1
             universe_data = data_dict.get(universe_id)
             
