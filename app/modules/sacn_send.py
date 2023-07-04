@@ -77,9 +77,10 @@ class SacnSend:
             if universe_data is not None:
                 # if data for this universe exists, send it
                 self.sender[universe_id].dmx_data = universe_data
-            else:
-                # if no data for this universe, send zeros (off) to all channels
-                self.sender[universe_id].dmx_data = [0] * 512
+            #  else:
+            #      # if no data for this universe, send zeros (off) to all channels
+            #      self.sender[universe_id].dmx_data = [0] * 512
+
     #  def send_sacn_data(self, data: List[List[int]]):
     #      for i in range(len(data)):
     #          self.sender[i+1].dmx_data = data[i]
