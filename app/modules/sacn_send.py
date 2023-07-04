@@ -37,29 +37,32 @@ class SacnSend:
         universe_count = 1  # Variable to keep track of the universe count
         channel_count = 1  # Variable to keep track of the channel count
 
+
         for strip in range(self.num_strips):
-            strip_universes = math.ceil(self.num_pixels / 170)  # Calculate the number of universes needed for the current strip
+            strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
+            
+            # Keep track of used universes within strip
+            strip_universe_use_counter = 0
 
-            for _ in range(strip_universes):
-                remaining_pixels = self.num_pixels - ((channel_count - 1) // 3)  # Calculate the remaining pixels for the current universe
-                universe = universe_count  # Store the current universe
+            # As long as we have pixels to arrange within DMX universes
+            while strip_pixels_counter > 0:
+                # Handle case when not enough pixels to fill up a whole universe
+                if strip_pixels_counter < 170:
+                    dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + strip_pixels_counter * 3])))
+                    channel_count += strip_pixels_counter * 3
+                    strip_pixels_counter -= strip_pixels_counter
+                else:
+                    dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + 170 * 3])))
+                    channel_count += 170 * 3  # we arranged 170 pixels which use 510 channels
+                    strip_pixels_counter -= 170
+                    
+                strip_universe_use_counter += 1
+                universe_count += 1  # move to next universe for either next part of strip or the new strip
+                    
+            # Log how much of universes each strip used
+            logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes')
 
-                while remaining_pixels > 0:
-                    if remaining_pixels >= 170:
-                        universe_data = [universe_count] * 510
-                        dmx_data.append(universe_data)
-                        channel_count += (170 * 3)
-                        remaining_pixels -= 170
-                        universe_count += 1
-                    else:
-                        universe_data = [universe_count] * (remaining_pixels * 3)
-                        dmx_data.append(universe_data)
-                        channel_count += (remaining_pixels * 3)
-                        remaining_pixels = 0
-
-                logging.info(f"Strip: {strip + 1}, Universe: {universe}, Channel: {channel_count}")
-                universe_count += 1  # Increment the universe count for the next strip
-
+        # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
         return dmx_data
 
     def send_sacn_data(self, data: List[List[int]]):
