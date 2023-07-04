@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import math 
 
-from typing import Callable, Optional, List, Dict, Union
+from typing import Callable, Optional, List, Dict, Union, Tuple
 
 class SacnSend:
     def __init__(self, bind_address = "127.0.0.1", num_strips=1, num_pixels=1, multicast=True, dummy=False, brightness = 50.0):
