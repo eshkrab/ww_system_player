@@ -42,7 +42,7 @@ class SacnSend:
             strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
             
             # Keep track of used universes within strip
-            strip_universe_use_counter = 0
+            strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
 
             # As long as we have pixels to arrange within DMX universes
             while strip_pixels_counter > 0:
