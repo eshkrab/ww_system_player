@@ -27,30 +27,6 @@ class SacnSend:
         self.sender.start()
         atexit.register(self.sender.stop)
 
-    #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
-    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #      scaled_brightness = self.brightness / 255
-    #      scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
-    #      scaled_frame = scaled_frame.tobytes()
-    #
-    #      dmx_data = []
-    #      universe_id = 1
-    #      channel_index = 0
-    #
-    #      for pixel in range(0, len(scaled_frame), 3):
-    #          # If this is a new universe or the current universe is full
-    #          if pixel % 510 == 0:
-    #              universe_id = pixel // 510 + 1
-    #              dmx_data.append((universe_id, [0]))  # New universe with a null start code
-    #              channel_index = 1
-    #
-    #          # Append RGB data for the pixel to the current universe
-    #          r, g, b = scaled_frame[pixel: pixel + 3]
-    #          dmx_data[-1][1].extend([r, g, b])
-    #          channel_index += 3
-    #
-    #      return dmx_data
-
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
         np_frame = np.frombuffer(frame, dtype=np.uint8)
         scaled_brightness = self.brightness / 255
@@ -59,36 +35,67 @@ class SacnSend:
 
         dmx_data = []  # List to store the DMX data
         universe_count = 1  # Variable to keep track of the universe count
-        channel_count = 1  # Variable to keep track of the channel count
-
+        channel_count = 0  # Variable to keep track of the channel count
 
         for strip in range(self.num_strips):
             strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
-
-            # Keep track of used universes within strip
-            strip_universe_use_counter = 0
-            channel_count = 1  # Reset channel count at the start of each strip
-
             # As long as we have pixels to arrange within DMX universes
             while strip_pixels_counter > 0:
                 # Handle case when not enough pixels to fill up a whole universe
                 if strip_pixels_counter < 170:
-                    dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + strip_pixels_counter * 3])))
+                    dmx_data.append((universe_count, list(scaled_frame[channel_count: channel_count + strip_pixels_counter * 3])))
                     channel_count += strip_pixels_counter * 3
                     strip_pixels_counter -= strip_pixels_counter
                 else:
-                    dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + 170 * 3])))
+                    dmx_data.append((universe_count, list(scaled_frame[channel_count: channel_count + 170 * 3])))
                     channel_count += 170 * 3  # we arranged 170 pixels which use 510 channels
                     strip_pixels_counter -= 170
-
-                strip_universe_use_counter += 1
-                universe_count += 1  # move to next universe for either next part of strip or the new strip
-
-            #  # Log how much of universes each strip used
-            #  logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes,  channel count: {channel_count}')
-
-        # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
+                    
+                # When a universe is filled, increment the universe count
+                if channel_count % 510 == 0:
+                    universe_count += 1  
+                    
         return dmx_data
+
+
+    #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
+    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
+    #      scaled_brightness = self.brightness / 255
+    #      scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
+    #      scaled_frame = scaled_frame.tobytes()
+    #
+    #      dmx_data = []  # List to store the DMX data
+    #      universe_count = 1  # Variable to keep track of the universe count
+    #      channel_count = 1  # Variable to keep track of the channel count
+    #
+    #
+    #      for strip in range(self.num_strips):
+    #          strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
+    #
+    #          # Keep track of used universes within strip
+    #          strip_universe_use_counter = 0
+    #          channel_count = 1  # Reset channel count at the start of each strip
+    #
+    #          # As long as we have pixels to arrange within DMX universes
+    #          while strip_pixels_counter > 0:
+    #              # Handle case when not enough pixels to fill up a whole universe
+    #              if strip_pixels_counter < 170:
+    #                  dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + strip_pixels_counter * 3])))
+    #                  channel_count += strip_pixels_counter * 3
+    #                  strip_pixels_counter -= strip_pixels_counter
+    #              else:
+    #                  dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + 170 * 3])))
+    #                  channel_count += 170 * 3  # we arranged 170 pixels which use 510 channels
+    #                  strip_pixels_counter -= 170
+    #
+    #              strip_universe_use_counter += 1
+    #              universe_count += 1  # move to next universe for either next part of strip or the new strip
+    #
+    #          #  # Log how much of universes each strip used
+    #          #  logging.debug(f'Strip:{strip} used {strip_universe_use_counter} universes,  channel count: {channel_count}')
+    #
+    #      # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
+    #      return dmx_data
 
     def send_sacn_data(self, data: List[Tuple[int, List[int]]]):
         # Transform list of tuples into dictionary
