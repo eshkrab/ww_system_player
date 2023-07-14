@@ -55,7 +55,7 @@ class SacnSend:
                 if channel_count % 510 == 0:
                     universe_count += 1  
                     
-        logging.debug(dmx_data)
+        #  logging.debug(dmx_data)
         return dmx_data
 
 
