@@ -59,7 +59,7 @@ class SacnSend:
         np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)
 
         end_time = time.time()
-        logging.debug(f'Conversion and scaling time: {end_time - start_time}')
+        #  logging.debug(f'Conversion and scaling time: {end_time - start_time}')
 
         # Reshape to (-1, 510), padding with zeros if necessary
         start_time = time.time()
