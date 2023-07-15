@@ -113,6 +113,7 @@ class SacnSend:
     def send_sacn_data(self, data: List[Tuple[int, List[int]]]):
         # Transform list of tuples into dictionary
         data_dict = {universe_id: universe_data for universe_id, universe_data in data}
+        logging.debug(f"Data dict: {data_dict}")
         
         # Go through all senders
         for i in range(self.universe_count):
