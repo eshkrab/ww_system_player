@@ -43,8 +43,11 @@ class SacnSend:
         for i in range(0, len(flattened_frame), 510):
             chunk = flattened_frame[i:i+510]
 
-            # Convert the chunk to a list and add it to dmx_data along with the current universe count
-            dmx_data.append((universe_count, list(chunk)))
+            # Add a start code and an end code to the chunk
+            chunk_with_start_and_end = [0x00] + list(chunk) + [0xFF]
+
+            # Add the chunk_with_start_and_end to dmx_data along with the current universe count
+            dmx_data.append((universe_count, chunk_with_start_and_end))
 
             # Increment the universe count
             universe_count += 1
