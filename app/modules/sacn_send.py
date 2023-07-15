@@ -64,145 +64,27 @@ class SacnSend:
         # Reshape to (-1, 510), padding with zeros if necessary
         start_time = time.time()
         total_size = np_frame.size
-        num_chunks = (total_size + 509) // 510  # Compute number of chunks, rounding up
-        padded_frame = np.zeros(num_chunks * 510, dtype=np.uint8)
+        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
+        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
         padded_frame[:total_size] = np_frame  # Copy original data
 
         # Now reshape to (-1, 510)
-        chunks = padded_frame.reshape(-1, 510)
+        chunks = padded_frame.reshape(-1, 512)
+        #  # Reshape to (-1, 510), padding with zeros if necessary
+        #  start_time = time.time()
+        #  total_size = np_frame.size
+        #  num_chunks = (total_size + 509) // 510  # Compute number of chunks, rounding up
+        #  padded_frame = np.zeros(num_chunks * 510, dtype=np.uint8)
+        #  padded_frame[:total_size] = np_frame  # Copy original data
+        #
+        #  # Now reshape to (-1, 510)
+        #  chunks = padded_frame.reshape(-1, 510)
 
         end_time = time.time()
         #  logging.debug(f'Chunking time: {end_time - start_time}')
 
         return chunks
 
-
-    #  def convert_frame_to_sacn_data(self, frame: bytearray):
-    #      start = time.time()
-    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #      conversion_end = time.time()
-    #
-    #      np_frame = (np_frame * self.brightness / 255).astype(np.uint8)
-    #
-    #      scaling_end = time.time()
-    #
-    #      flattened_frame = np_frame.flatten().tolist()
-    #
-    #      data = [(universe_id, flattened_frame[i:i+510]) for i, universe_id in zip(range(0, len(flattened_frame), 510), itertools.cycle(range(1, self.universe_count)))]
-    #      chunking_end = time.time()
-    #
-    #      logging.debug(f"Conversion time: {conversion_end - start}")
-    #      logging.debug(f"Scaling time: {scaling_end - conversion_end}")
-    #      logging.debug(f"Chunking time: {chunking_end - scaling_end}")
-    #
-    #      return data
-
-
-    #  def convert_frame_to_sacn_data(self, frame):
-    #      start_time = time.time()
-    #
-    #      # Adjust brightness using the lookup table
-    #      #  frame = bytearray(self.brightness_table[b] for b in frame)
-    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #      np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
-    #      # Flatten the frame to 1D array
-    #      flattened_frame = np_frame.flatten().tolist()
-    #      #  flattened_frame = list(frame)
-    #
-    #      conversion_time = time.time() - start_time
-    #      start_time = time.time()
-    #
-    #      # List for holding DMX data
-    #      dmx_data = []
-    #
-    #      # Iterate over the flattened frame in chunks
-    #      for i in range(0, len(flattened_frame), 510):
-    #          # Update the chunk template
-    #          chunk_size = min(510, len(flattened_frame) - i)
-    #          self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
-    #
-    #          # Append the chunk to DMX data
-    #          dmx_data.append((i//510 + 1, self.chunk_template[:chunk_size + 2]))  # Return as tuple (universe_id, universe_data)
-    #
-    #      chunking_time = time.time() - start_time
-    #
-    #      #  logging.info(f"Conversion time: {conversion_time}")
-    #      #  logging.info(f"Chunking time: {chunking_time}")
-    #
-    #      #  ##  Log the universe, channel, and data for the first pixel of each strip
-    #      #  channels_per_strip = self.num_pixels * 3
-    #      #  strip = 0
-    #      #  first_pixel_index = strip * channels_per_strip
-    #      #  universe = first_pixel_index // 510 + 1
-    #      #  channel = first_pixel_index % 510 + 1
-    #      #  data = flattened_frame[first_pixel_index:first_pixel_index+3]
-    #      #  logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
-    #
-    #      return dmx_data
-
-
-    #  def convert_frame_to_sacn_data(self, frame):
-    #      start_time = time.time()
-    #
-    #      # Adjust brightness using the lookup table
-    #      frame = bytearray(self.brightness_table[b] for b in frame)
-    #      flattened_frame = list(frame)
-    #
-    #      conversion_time = time.time() - start_time
-    #      start_time = time.time()
-    #
-    #      # List for holding DMX data
-    #      dmx_data = []
-    #
-    #      # Iterate over the flattened frame in chunks
-    #      for i in range(0, len(flattened_frame), 510):
-    #          # Update the chunk template
-    #          chunk_size = min(510, len(flattened_frame) - i)
-    #          self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
-    #
-    #          # Append the chunk to DMX data
-    #          dmx_data.extend(self.chunk_template[:chunk_size + 2])
-    #
-    #      chunking_time = time.time() - start_time
-    #
-    #      logging.info(f"Conversion time: {conversion_time}")
-    #      logging.info(f"Chunking time: {chunking_time}")
-    #
-    #      return dmx_data
-
-
-    #  def convert_frame_to_sacn_data(self, frame):
-    #          start_time = time.time()
-    #          brightness_uint8 = np.uint8(self.brightness)
-    #
-    #          # Convert the frame to uint8 and scale it by brightness
-    #          np_frame = frame.astype(np.uint8)
-    #          np_frame *= brightness_uint8 // 255
-    #
-    #          conversion_time = time.time() - start_time
-    #          start_time = time.time()
-    #
-    #          # Flatten the frame to 1D array
-    #          flattened_frame = np_frame.flatten().tolist()
-    #
-    #          # List for holding DMX data
-    #          dmx_data = []
-    #
-    #          # Iterate over the flattened frame in chunks
-    #          for i in range(0, len(flattened_frame), 510):
-    #              # Update the chunk template
-    #              chunk_size = min(510, len(flattened_frame) - i)
-    #              self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
-    #
-    #              # Append the chunk to DMX data
-    #              dmx_data.extend(self.chunk_template[:chunk_size + 2])
-    #
-    #          chunking_time = time.time() - start_time
-    #
-    #          logging.info(f"Conversion time: {conversion_time}")
-    #          logging.info(f"Chunking time: {chunking_time}")
-    #
-    #          return dmx_data
 
     ##################### 22 FPS
     #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
@@ -257,137 +139,6 @@ class SacnSend:
     #      #  logging.info(f"Scaling time: {scaling_time - conversion_time}")
     #      #  logging.info(f"Chunking time: {chunking_time - scaling_time}")
     #      #  logging.info(f"Logging time: {logging_time - chunking_time}")
-    #
-    #      return dmx_data
-
-
-    #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
-    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #      np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
-    #      flattened_frame = np_frame.flatten()
-    #
-    #      # Initialize the universe count
-    #      universe_count = 1
-    #
-    #      # Initialize an empty list to hold the DMX data
-    #      dmx_data = []
-    #
-    #      # Prepare a template with padding in advance
-    #      chunk_template = np.full(512, fill_value=0xFF, dtype=np.uint8)
-    #      chunk_template[0] = 0x00  # start code
-    #
-    #      # Iterate over the flattened frame in chunks of 510
-    #      for i in range(0, len(flattened_frame), 510):
-    #          chunk = flattened_frame[i:i+510]
-    #          chunk_template[1:1+len(chunk)] = chunk  # Assign to a slice that matches the size of the chunk
-    #
-    #          # Add the chunk to dmx_data along with the current universe count
-    #          dmx_data.append((universe_count, bytes(chunk_template)))
-    #
-    #          # Reset chunk_template for next iteration
-    #          chunk_template[1:1+len(chunk)] = 0xFF
-    #
-    #          # Increment the universe count
-    #          universe_count += 1
-    #
-    #      # Number of channels per strip
-    #      channels_per_strip = self.num_pixels * 3
-    #
-    #      ##  Log the universe, channel, and data for the first pixel of each strip
-    #      strip = 0
-    #      first_pixel_index = strip * channels_per_strip
-    #      universe = first_pixel_index // 510 + 1
-    #      channel = first_pixel_index % 510 + 1
-    #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
-    #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
-    #
-    #      return dmx_data
-
-
-    #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
-    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #      np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
-    #      flattened_frame = np_frame.flatten()
-    #
-    #      # Initialize the universe count
-    #      universe_count = 1
-    #
-    #      # Initialize an empty list to hold the DMX data
-    #      dmx_data = []
-    #
-    #      # Prepare a template with padding in advance
-    #      chunk_template = np.full(512, fill_value=0xFF, dtype=np.uint8)
-    #      chunk_template[0] = 0x00  # start code
-    #
-    #      # Iterate over the flattened frame in chunks of 510
-    #      for i in range(0, len(flattened_frame), 510):
-    #          chunk = flattened_frame[i:i+510]
-    #          chunk_template[1:1+len(chunk)] = chunk  # Assign to a slice that matches the size of the chunk
-    #
-    #          # Add the chunk to dmx_data along with the current universe count
-    #          dmx_data.append((universe_count, bytes(chunk_template)))
-    #
-    #          # Increment the universe count
-    #          universe_count += 1
-    #
-    #      #  # Number of channels per strip
-    #      #  channels_per_strip = self.num_pixels * 3
-    #      #
-    #      #  # Log the universe, channel, and data for the first pixel of each strip
-    #      #  for strip in range(self.num_strips):
-    #      #      first_pixel_index = strip * channels_per_strip
-    #      #      universe = first_pixel_index // 510 + 1
-    #      #      channel = first_pixel_index % 510 + 1
-    #      #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
-    #      #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
-    #
-    #      ##  Log the universe, channel, and data for the first pixel of each strip
-    #      strip = 0
-    #      first_pixel_index = strip * channels_per_strip
-    #      universe = first_pixel_index // 510 + 1
-    #      channel = first_pixel_index % 510 + 1
-    #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
-    #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
-    #
-    #      return dmx_data
-
-
-    #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
-    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #      scaled_brightness = self.brightness / 255
-    #      scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
-    #      flattened_frame = scaled_frame.flatten()
-    #
-    #      # Initialize the universe count
-    #      universe_count = 1
-    #
-    #      # Initialize an empty list to hold the DMX data
-    #      dmx_data = []
-    #
-    #      # Iterate over the flattened frame in chunks of 510
-    #      for i in range(0, len(flattened_frame), 510):
-    #          chunk = flattened_frame[i:i+510]
-    #
-    #          # Add a start code to the chunk and pad the chunk to 512 bytes with 0xFF
-    #          #  chunk_with_start_and_pad = [0x00] + list(chunk) + [0xFF]*(512 - len(chunk) - 1)
-    #          chunk_with_start_and_pad = [0x00] + list(chunk) + [0xFF]
-    #
-    #          # Add the chunk_with_start_and_pad to dmx_data along with the current universe count
-    #          dmx_data.append((universe_count, bytes(chunk_with_start_and_pad)))
-    #
-    #          # Increment the universe count
-    #          universe_count += 1
-    #
-    #      # Number of channels per strip
-    #      channels_per_strip = self.num_pixels * 3
-    #
-    #      # Log the universe, channel, and data for the first pixel of each strip
-    #      #  strip = 0
-    #      #  first_pixel_index = strip * channels_per_strip
-    #      #  universe = first_pixel_index // 510 + 1
-    #      #  channel = first_pixel_index % 510 + 1
-    #      #  data = flattened_frame[first_pixel_index:first_pixel_index+3]
-    #      #  logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
     #
     #      return dmx_data
 
