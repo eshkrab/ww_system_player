@@ -30,8 +30,9 @@ class SacnSend:
 
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
         np_frame = np.frombuffer(frame, dtype=np.uint8)
-        np_frame *= self.brightness / 255  # In-place scaling
-        np_frame = np_frame.astype(np.uint8)
+        np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
+        #  np_frame *= self.brightness / 255  # In-place scaling
+        #  np_frame = np_frame.astype(np.uint8)
         flattened_frame = np_frame.flatten()
 
         # Initialize the universe count
