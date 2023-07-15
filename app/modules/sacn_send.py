@@ -57,7 +57,7 @@ class SacnSend:
             self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
 
             # Append the chunk to DMX data
-            dmx_data.extend(self.chunk_template[:chunk_size + 2])
+            dmx_data.append((i//510 + 1, self.chunk_template[:chunk_size + 2]))  # Return as tuple (universe_id, universe_data)
         
         chunking_time = time.time() - start_time
 
@@ -65,6 +65,36 @@ class SacnSend:
         logging.info(f"Chunking time: {chunking_time}")
         
         return dmx_data
+
+
+    #  def convert_frame_to_sacn_data(self, frame):
+    #      start_time = time.time()
+    #
+    #      # Adjust brightness using the lookup table
+    #      frame = bytearray(self.brightness_table[b] for b in frame)
+    #      flattened_frame = list(frame)
+    #
+    #      conversion_time = time.time() - start_time
+    #      start_time = time.time()
+    #
+    #      # List for holding DMX data
+    #      dmx_data = []
+    #
+    #      # Iterate over the flattened frame in chunks
+    #      for i in range(0, len(flattened_frame), 510):
+    #          # Update the chunk template
+    #          chunk_size = min(510, len(flattened_frame) - i)
+    #          self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
+    #
+    #          # Append the chunk to DMX data
+    #          dmx_data.extend(self.chunk_template[:chunk_size + 2])
+    #
+    #      chunking_time = time.time() - start_time
+    #
+    #      logging.info(f"Conversion time: {conversion_time}")
+    #      logging.info(f"Chunking time: {chunking_time}")
+    #
+    #      return dmx_data
 
 
     #  def convert_frame_to_sacn_data(self, frame):
