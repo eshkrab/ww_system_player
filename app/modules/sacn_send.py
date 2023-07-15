@@ -89,6 +89,7 @@ class SacnSend:
                 if channel_count > 510:
                     universe_count += 1
                     channel_count = 1  # reset channel count for the new universe
+            logging.debug(f"strip {strip} pixel 0 is universe {universe_count}, channel {channel_count}, {dmx_data[strip][1][0]}  ") 
 
         # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
         return dmx_data
