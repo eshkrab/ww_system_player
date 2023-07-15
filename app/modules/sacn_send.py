@@ -79,7 +79,7 @@ class SacnSend:
 
         logging.info(f"Conversion time: {conversion_time - start_time}")
         logging.info(f"Scaling time: {scaling_time - conversion_time}")
-        logging.info(f"Chunking time: {chunking_time - scaling_time}")
+        #  logging.info(f"Chunking time: {chunking_time - scaling_time}")
         logging.info(f"Logging time: {logging_time - chunking_time}")
 
         return dmx_data
