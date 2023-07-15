@@ -72,7 +72,7 @@ class SacnSend:
         chunks = padded_frame.reshape(-1, 510)
 
         end_time = time.time()
-        logging.debug(f'Chunking time: {end_time - start_time}')
+        #  logging.debug(f'Chunking time: {end_time - start_time}')
 
         return chunks
 
@@ -434,11 +434,11 @@ class SacnSend:
     #
     #      # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
     #      return dmx_data
-
     def send_sacn_data(self, data):
-        data_dict = {universe_id: universe_data.tolist() for universe_id, universe_data in data}
-        for universe_id, universe_data in data_dict.items():
-            self.sender[universe_id].dmx_data = universe_data
+        for universe_id, universe_data in enumerate(data, start=1):  # starts numbering from 1
+            self.sender[universe_id].dmx_data = universe_data.tolist()
+
+
 
     #  def send_sacn_data(self, data: List[Tuple[int, List[int]]]):
     #      # Transform list of tuples into dictionary
@@ -468,6 +468,6 @@ class SacnSend:
     #          #  self.sender[i+1].dmx_data = scaled_data
 
     def send_frame(self, frame: np.array):
-        #  data = self.convert_frame_to_sacn_data(frame)
-        data = self.profile_convert_frame_to_sacn_data(frame)
+        data = self.convert_frame_to_sacn_data(frame)
+        #  data = self.profile_convert_frame_to_sacn_data(frame)
         self.send_sacn_data(data)
