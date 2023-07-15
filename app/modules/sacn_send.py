@@ -65,17 +65,17 @@ class SacnSend:
         
         chunking_time = time.time() - start_time
 
-        logging.info(f"Conversion time: {conversion_time}")
-        logging.info(f"Chunking time: {chunking_time}")
+        #  logging.info(f"Conversion time: {conversion_time}")
+        #  logging.info(f"Chunking time: {chunking_time}")
 
-        #  ##  Log the universe, channel, and data for the first pixel of each strip
-        #  channels_per_strip = self.num_pixels * 3
-        #  strip = 0
-        #  first_pixel_index = strip * channels_per_strip
-        #  universe = first_pixel_index // 510 + 1
-        #  channel = first_pixel_index % 510 + 1
-        #  data = flattened_frame[first_pixel_index:first_pixel_index+3]
-        #  logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+        ##  Log the universe, channel, and data for the first pixel of each strip
+        channels_per_strip = self.num_pixels * 3
+        strip = 0
+        first_pixel_index = strip * channels_per_strip
+        universe = first_pixel_index // 510 + 1
+        channel = first_pixel_index % 510 + 1
+        data = flattened_frame[first_pixel_index:first_pixel_index+3]
+        logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
         
         return dmx_data
 
