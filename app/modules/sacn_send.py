@@ -51,25 +51,51 @@ class SacnSend:
 
         return data
 
-    def convert_frame_to_sacn_data(self, frame: bytearray):
-        start = time.time()
+    def convert_frame_to_sacn_data(self, frame):
+        start_time = time.time()
         np_frame = np.frombuffer(frame, dtype=np.uint8)
-        conversion_end = time.time()
-        
-        np_frame = (np_frame * self.brightness / 255).astype(np.uint8)
 
-        scaling_end = time.time()
-        
-        flattened_frame = np_frame.flatten().tolist()
-        
-        data = [(universe_id, flattened_frame[i:i+510]) for i, universe_id in zip(range(0, len(flattened_frame), 510), itertools.cycle(range(1, self.universe_count)))]
-        chunking_end = time.time()
+        # Scale brightness
+        np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)
 
-        logging.debug(f"Conversion time: {conversion_end - start}")
-        logging.debug(f"Scaling time: {scaling_end - conversion_end}")
-        logging.debug(f"Chunking time: {chunking_end - scaling_end}")
+        end_time = time.time()
+        self.logger.debug(f'Conversion and scaling time: {end_time - start_time}')
 
-        return data
+        # Reshape to (-1, 510), padding with zeros if necessary
+        start_time = time.time()
+        total_size = np_frame.size
+        num_chunks = (total_size + 509) // 510  # Compute number of chunks, rounding up
+        padded_frame = np.zeros(num_chunks * 510, dtype=np.uint8)
+        padded_frame[:total_size] = np_frame  # Copy original data
+
+        # Now reshape to (-1, 510)
+        chunks = padded_frame.reshape(-1, 510)
+
+        end_time = time.time()
+        self.logger.debug(f'Chunking time: {end_time - start_time}')
+
+        return chunks
+
+
+    #  def convert_frame_to_sacn_data(self, frame: bytearray):
+    #      start = time.time()
+    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
+    #      conversion_end = time.time()
+    #
+    #      np_frame = (np_frame * self.brightness / 255).astype(np.uint8)
+    #
+    #      scaling_end = time.time()
+    #
+    #      flattened_frame = np_frame.flatten().tolist()
+    #
+    #      data = [(universe_id, flattened_frame[i:i+510]) for i, universe_id in zip(range(0, len(flattened_frame), 510), itertools.cycle(range(1, self.universe_count)))]
+    #      chunking_end = time.time()
+    #
+    #      logging.debug(f"Conversion time: {conversion_end - start}")
+    #      logging.debug(f"Scaling time: {scaling_end - conversion_end}")
+    #      logging.debug(f"Chunking time: {chunking_end - scaling_end}")
+    #
+    #      return data
 
 
     #  def convert_frame_to_sacn_data(self, frame):
@@ -409,25 +435,30 @@ class SacnSend:
     #      # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
     #      return dmx_data
 
-    def send_sacn_data(self, data: List[Tuple[int, List[int]]]):
-        # Transform list of tuples into dictionary
-        data_dict = {universe_id: universe_data for universe_id, universe_data in data}
-        
-        # Go through all senders
-        for i in range(self.universe_count):
-            universe_id = i + 1
-            universe_data = data_dict.get(universe_id)
-            
-            if universe_data is not None:
-                # if data for this universe exists, send it
-                self.sender[universe_id].dmx_data = universe_data
-                #  if universe_id > 51:
-                #      logging.debug(f'Universe {universe_id} data: {universe_data}')
-            #  else:
-            #      logging.warning(f'No data for universe {universe_id}')
-            #  else:
-            #      # if no data for this universe, send zeros (off) to all channels
-            #      self.sender[universe_id].dmx_data = [0] * 512
+    def send_sacn_data(self, data):
+        data_dict = {universe_id: universe_data.tolist() for universe_id, universe_data in data}
+        for universe_id, universe_data in data_dict.items():
+            self.sender[universe_id].dmx_data = universe_data
+
+    #  def send_sacn_data(self, data: List[Tuple[int, List[int]]]):
+    #      # Transform list of tuples into dictionary
+    #      data_dict = {universe_id: universe_data for universe_id, universe_data in data}
+    #
+    #      # Go through all senders
+    #      for i in range(self.universe_count):
+    #          universe_id = i + 1
+    #          universe_data = data_dict.get(universe_id)
+    #
+    #          if universe_data is not None:
+    #              # if data for this universe exists, send it
+    #              self.sender[universe_id].dmx_data = universe_data
+    #              #  if universe_id > 51:
+    #              #      logging.debug(f'Universe {universe_id} data: {universe_data}')
+    #          #  else:
+    #          #      logging.warning(f'No data for universe {universe_id}')
+    #          #  else:
+    #          #      # if no data for this universe, send zeros (off) to all channels
+    #          #      self.sender[universe_id].dmx_data = [0] * 512
 
     #  def send_sacn_data(self, data: List[List[int]]):
     #      for i in range(len(data)):
