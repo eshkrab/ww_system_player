@@ -63,6 +63,8 @@ class SacnSend:
             data = flattened_frame[first_pixel_index:first_pixel_index+3]
             logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
 
+        logging.debug(f"dmx_data: {dmx_data}")
+
         return dmx_data
 
 
