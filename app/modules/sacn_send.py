@@ -31,8 +31,6 @@ class SacnSend:
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
         np_frame = np.frombuffer(frame, dtype=np.uint8)
         np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
-        #  np_frame *= self.brightness / 255  # In-place scaling
-        #  np_frame = np_frame.astype(np.uint8)
         flattened_frame = np_frame.flatten()
 
         # Initialize the universe count
@@ -47,7 +45,8 @@ class SacnSend:
 
         # Iterate over the flattened frame in chunks of 510
         for i in range(0, len(flattened_frame), 510):
-            chunk_template[1:511] = flattened_frame[i:i+510]
+            chunk = flattened_frame[i:i+510]
+            chunk_template[1:1+len(chunk)] = chunk  # Assign to a slice that matches the size of the chunk
 
             # Add the chunk to dmx_data along with the current universe count
             dmx_data.append((universe_count, bytes(chunk_template)))
@@ -55,16 +54,16 @@ class SacnSend:
             # Increment the universe count
             universe_count += 1
 
-        #  # Number of channels per strip
-        #  channels_per_strip = self.num_pixels * 3
-        #
-        #  # Log the universe, channel, and data for the first pixel of each strip
-        #  for strip in range(self.num_strips):
-        #      first_pixel_index = strip * channels_per_strip
-        #      universe = first_pixel_index // 510 + 1
-        #      channel = first_pixel_index % 510 + 1
-        #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
-        #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+        # Number of channels per strip
+        channels_per_strip = self.num_pixels * 3
+
+        # Log the universe, channel, and data for the first pixel of each strip
+        for strip in range(self.num_strips):
+            first_pixel_index = strip * channels_per_strip
+            universe = first_pixel_index // 510 + 1
+            channel = first_pixel_index % 510 + 1
+            data = flattened_frame[first_pixel_index:first_pixel_index+3]
+            logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
 
         return dmx_data
 
