@@ -58,6 +58,7 @@ class SacnSend:
     #      #  logging.debug(dmx_data)
     #      return dmx_data
 
+ 
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
         np_frame = np.frombuffer(frame, dtype=np.uint8)
         scaled_brightness = self.brightness / 255
@@ -69,7 +70,7 @@ class SacnSend:
         channel_count = 1  # Variable to keep track of the channel count
 
         for strip in range(self.num_strips):
-            strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
+            strip_pixels_counter = self.num_pixels  # Number of pixels for the current strip
 
             # As long as we have pixels to arrange within DMX universes
             while strip_pixels_counter > 0:
@@ -85,15 +86,16 @@ class SacnSend:
                     channel_count += 170 * 3  # we arranged 170 pixels which use 510 channels
                     strip_pixels_counter -= 170
 
-                # When a universe is filled, increment the universe count
+                # When a universe is filled, increment the universe count and reset channel count
                 if channel_count > 510:
                     universe_count += 1
                     channel_count = 1  # reset channel count for the new universe
+
             logging.debug(f"strip {strip} pixel 0 is universe {universe_count}, channel {channel_count}, {dmx_data[strip][1][0]}  ") 
 
         # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
         return dmx_data
- 
+
 
 
     #####################################
