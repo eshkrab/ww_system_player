@@ -53,9 +53,9 @@ class SacnSend:
         data = [(universe_id, flattened_frame[i:i+510]) for i, universe_id in zip(range(0, len(flattened_frame), 510), itertools.cycle(range(1, self.universe_count)))]
         chunking_end = time.time()
 
-        #  self.logger.debug(f"Conversion time: {conversion_end - start}")
-        #  self.logger.debug(f"Scaling time: {scaling_end - conversion_end}")
-        #  self.logger.debug(f"Chunking time: {chunking_end - scaling_end}")
+        self.logger.debug(f"Conversion time: {conversion_end - start}")
+        self.logger.debug(f"Scaling time: {scaling_end - conversion_end}")
+        self.logger.debug(f"Chunking time: {chunking_end - scaling_end}")
 
         return data
 
