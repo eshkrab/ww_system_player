@@ -14,6 +14,7 @@ class SacnSend:
         self.sender = sacn.sACNsender(bind_address)
         self.sender.fps = 60
         self.brightness = brightness
+        self.set_brightness(brightness)
         self.num_strips = num_strips
         self.num_pixels = num_pixels
         self.universe_count = math.ceil( (num_strips * num_pixels * 3) / 510)
