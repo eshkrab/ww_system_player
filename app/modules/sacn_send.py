@@ -44,7 +44,8 @@ class SacnSend:
             chunk = flattened_frame[i:i+510]
 
             # Add a start code to the chunk and pad the chunk to 512 bytes with 0xFF
-            chunk_with_start_and_pad = [0x00] + list(chunk) + [0xFF]*(512 - len(chunk) - 1)
+            #  chunk_with_start_and_pad = [0x00] + list(chunk) + [0xFF]*(512 - len(chunk) - 1)
+            chunk_with_start_and_pad = [0x00] + list(chunk) + [0xFF]
 
             # Add the chunk_with_start_and_pad to dmx_data along with the current universe count
             dmx_data.append((universe_count, bytes(chunk_with_start_and_pad)))
