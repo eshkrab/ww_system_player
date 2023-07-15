@@ -32,38 +32,72 @@ class SacnSend:
         self.sender.start()
         atexit.register(self.sender.stop)
 
+    def set_brightness(self, brightness):
+        self.brightness = brightness
+        self.brightness_table = bytearray(int(i * brightness / 255) for i in range(256))
+
     def convert_frame_to_sacn_data(self, frame):
-            start_time = time.time()
-            brightness_uint8 = np.uint8(self.brightness)
-            
-            # Convert the frame to uint8 and scale it by brightness
-            np_frame = frame.astype(np.uint8)
-            np_frame *= brightness_uint8 // 255
-            
-            conversion_time = time.time() - start_time
-            start_time = time.time()
+        start_time = time.time()
 
-            # Flatten the frame to 1D array
-            flattened_frame = np_frame.flatten().tolist()
+        # Adjust brightness using the lookup table
+        frame = bytearray(self.brightness_table[b] for b in frame)
+        flattened_frame = list(frame)
 
-            # List for holding DMX data
-            dmx_data = []
+        conversion_time = time.time() - start_time
+        start_time = time.time()
 
-            # Iterate over the flattened frame in chunks
-            for i in range(0, len(flattened_frame), 510):
-                # Update the chunk template
-                chunk_size = min(510, len(flattened_frame) - i)
-                self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
+        # List for holding DMX data
+        dmx_data = []
 
-                # Append the chunk to DMX data
-                dmx_data.extend(self.chunk_template[:chunk_size + 2])
-            
-            chunking_time = time.time() - start_time
+        # Iterate over the flattened frame in chunks
+        for i in range(0, len(flattened_frame), 510):
+            # Update the chunk template
+            chunk_size = min(510, len(flattened_frame) - i)
+            self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
 
-            logging.info(f"Conversion time: {conversion_time}")
-            logging.info(f"Chunking time: {chunking_time}")
-            
-            return dmx_data
+            # Append the chunk to DMX data
+            dmx_data.extend(self.chunk_template[:chunk_size + 2])
+        
+        chunking_time = time.time() - start_time
+
+        logging.info(f"Conversion time: {conversion_time}")
+        logging.info(f"Chunking time: {chunking_time}")
+        
+        return dmx_data
+
+
+    #  def convert_frame_to_sacn_data(self, frame):
+    #          start_time = time.time()
+    #          brightness_uint8 = np.uint8(self.brightness)
+    #
+    #          # Convert the frame to uint8 and scale it by brightness
+    #          np_frame = frame.astype(np.uint8)
+    #          np_frame *= brightness_uint8 // 255
+    #
+    #          conversion_time = time.time() - start_time
+    #          start_time = time.time()
+    #
+    #          # Flatten the frame to 1D array
+    #          flattened_frame = np_frame.flatten().tolist()
+    #
+    #          # List for holding DMX data
+    #          dmx_data = []
+    #
+    #          # Iterate over the flattened frame in chunks
+    #          for i in range(0, len(flattened_frame), 510):
+    #              # Update the chunk template
+    #              chunk_size = min(510, len(flattened_frame) - i)
+    #              self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
+    #
+    #              # Append the chunk to DMX data
+    #              dmx_data.extend(self.chunk_template[:chunk_size + 2])
+    #
+    #          chunking_time = time.time() - start_time
+    #
+    #          logging.info(f"Conversion time: {conversion_time}")
+    #          logging.info(f"Chunking time: {chunking_time}")
+    #
+    #          return dmx_data
 
     ##################### 22 FPS
     #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
