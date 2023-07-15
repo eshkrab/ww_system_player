@@ -44,7 +44,8 @@ class SacnSend:
         np_frame = np.frombuffer(frame, dtype=np.uint8)
         conversion_end = time.time()
         
-        np_frame *= self.brightness / 255
+        np_frame = (np_frame * self.brightness / 255).astype(np.uint8)
+
         scaling_end = time.time()
         
         flattened_frame = np_frame.flatten().tolist()
