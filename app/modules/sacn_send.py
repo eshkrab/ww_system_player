@@ -58,42 +58,41 @@ class SacnSend:
     #      #  logging.debug(dmx_data)
     #      return dmx_data
 
-    def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
-        np_frame = np.frombuffer(frame, dtype=np.uint8)
-        scaled_brightness = self.brightness / 255
-        scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
-        scaled_frame = scaled_frame.tobytes()
+   def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
+       np_frame = np.frombuffer(frame, dtype=np.uint8)
+       scaled_brightness = self.brightness / 255
+       scaled_frame = (np_frame * scaled_brightness).astype(np.uint8)
+       scaled_frame = scaled_frame.tobytes()
 
-        dmx_data = []  # List to store the DMX data
-        universe_count = 1  # Variable to keep track of the universe count
-        channel_count = 1  # Variable to keep track of the channel count
+       dmx_data = []  # List to store the DMX data
+       universe_count = 1  # Variable to keep track of the universe count
+       channel_count = 1  # Variable to keep track of the channel count
 
-        for strip in range(self.num_strips):
-            strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
-            # Keep track of used universes within strip
-            strip_universe_use_counter = 0
+       for strip in range(self.num_strips):
+           strip_pixels_counter = self.num_pixels # Number of pixels for the current strip
 
-            # As long as we have pixels to arrange within DMX universes
-            while strip_pixels_counter > 0:
-                # Handle case when not enough pixels to fill up a whole universe
-                if strip_pixels_counter < 170:
-                    dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + strip_pixels_counter * 3])))
-                    #  logging.debug(f'Appending data from channel {channel_count} to channel {channel_count - 1 + strip_pixels_counter * 3}')
-                    channel_count += strip_pixels_counter * 3
-                    strip_pixels_counter -= strip_pixels_counter
-                else:
-                    dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: channel_count - 1 + 170 * 3])))
-                    #  logging.debug(f'Appending data from channel {channel_count} to channel {channel_count - 1 + 170 * 3}')
-                    channel_count += 170 * 3  # we arranged 170 pixels which use 510 channels
-                    strip_pixels_counter -= 170
+           # As long as we have pixels to arrange within DMX universes
+           while strip_pixels_counter > 0:
+               # Handle case when not enough pixels to fill up a whole universe
+               if strip_pixels_counter < 170:
+                   end_channel = channel_count - 1 + strip_pixels_counter * 3
+                   dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: end_channel])))
+                   channel_count += strip_pixels_counter * 3
+                   strip_pixels_counter -= strip_pixels_counter
+               else:
+                   end_channel = channel_count - 1 + 170 * 3
+                   dmx_data.append((universe_count, list(scaled_frame[channel_count - 1: end_channel])))
+                   channel_count += 170 * 3  # we arranged 170 pixels which use 510 channels
+                   strip_pixels_counter -= 170
 
-                strip_universe_use_counter += 1
-                universe_count += 1  # move to next universe for either next part of strip or the new strip
-                logging.debug(f'Universe count: {universe_count}, Channel count: {channel_count}, Pixels remaining in strip: {strip_pixels_counter}')
-            logging.debug(f'Strip {strip} pixel 0 is in universe {universe_count - strip_universe_use_counter}')
+               # When a universe is filled, increment the universe count
+               if channel_count > 510:
+                   universe_count += 1
+                   channel_count = 1  # reset channel count for the new universe
 
-        # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
-        return dmx_data
+       # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
+       return dmx_data
+ 
 
 
     #####################################
