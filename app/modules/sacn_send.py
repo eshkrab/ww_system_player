@@ -54,16 +54,16 @@ class SacnSend:
             # Increment the universe count
             universe_count += 1
 
-        # Number of channels per strip
-        channels_per_strip = self.num_pixels * 3
-
-        # Log the universe, channel, and data for the first pixel of each strip
-        for strip in range(self.num_strips):
-            first_pixel_index = strip * channels_per_strip
-            universe = first_pixel_index // 510 + 1
-            channel = first_pixel_index % 510 + 1
-            data = flattened_frame[first_pixel_index:first_pixel_index+3]
-            logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+        #  # Number of channels per strip
+        #  channels_per_strip = self.num_pixels * 3
+        #
+        #  # Log the universe, channel, and data for the first pixel of each strip
+        #  for strip in range(self.num_strips):
+        #      first_pixel_index = strip * channels_per_strip
+        #      universe = first_pixel_index // 510 + 1
+        #      channel = first_pixel_index % 510 + 1
+        #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
+        #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
 
         return dmx_data
 
