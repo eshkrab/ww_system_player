@@ -72,7 +72,7 @@ class SacnSend:
         chunks = padded_frame.reshape(-1, 510)
 
         end_time = time.time()
-        self.logger.debug(f'Chunking time: {end_time - start_time}')
+        logging.debug(f'Chunking time: {end_time - start_time}')
 
         return chunks
 
