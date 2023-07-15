@@ -5,6 +5,8 @@ import logging
 import numpy as np
 import math 
 import time
+import itertools
+
 
 from typing import Callable, Optional, List, Dict, Union, Tuple
 
@@ -37,47 +39,67 @@ class SacnSend:
         self.brightness = brightness
         self.brightness_table = bytearray(int(i * brightness / 255) for i in range(256))
 
-    def convert_frame_to_sacn_data(self, frame):
-        start_time = time.time()
-
-        # Adjust brightness using the lookup table
-        #  frame = bytearray(self.brightness_table[b] for b in frame)
+    def convert_frame_to_sacn_data(self, frame: bytearray):
+        start = time.time()
         np_frame = np.frombuffer(frame, dtype=np.uint8)
-        np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
-        # Flatten the frame to 1D array
+        conversion_end = time.time()
+        
+        np_frame *= self.brightness / 255
+        scaling_end = time.time()
+        
         flattened_frame = np_frame.flatten().tolist()
-        #  flattened_frame = list(frame)
-
-        conversion_time = time.time() - start_time
-        start_time = time.time()
-
-        # List for holding DMX data
-        dmx_data = []
-
-        # Iterate over the flattened frame in chunks
-        for i in range(0, len(flattened_frame), 510):
-            # Update the chunk template
-            chunk_size = min(510, len(flattened_frame) - i)
-            self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
-
-            # Append the chunk to DMX data
-            dmx_data.append((i//510 + 1, self.chunk_template[:chunk_size + 2]))  # Return as tuple (universe_id, universe_data)
         
-        chunking_time = time.time() - start_time
+        data = [(universe_id, flattened_frame[i:i+510]) for i, universe_id in zip(range(0, len(flattened_frame), 510), itertools.cycle(range(1, self.universe_count)))]
+        chunking_end = time.time()
 
-        #  logging.info(f"Conversion time: {conversion_time}")
-        #  logging.info(f"Chunking time: {chunking_time}")
+        #  self.logger.debug(f"Conversion time: {conversion_end - start}")
+        #  self.logger.debug(f"Scaling time: {scaling_end - conversion_end}")
+        #  self.logger.debug(f"Chunking time: {chunking_end - scaling_end}")
 
-        #  ##  Log the universe, channel, and data for the first pixel of each strip
-        #  channels_per_strip = self.num_pixels * 3
-        #  strip = 0
-        #  first_pixel_index = strip * channels_per_strip
-        #  universe = first_pixel_index // 510 + 1
-        #  channel = first_pixel_index % 510 + 1
-        #  data = flattened_frame[first_pixel_index:first_pixel_index+3]
-        #  logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
-        
-        return dmx_data
+        return data
+
+
+    #  def convert_frame_to_sacn_data(self, frame):
+    #      start_time = time.time()
+    #
+    #      # Adjust brightness using the lookup table
+    #      #  frame = bytearray(self.brightness_table[b] for b in frame)
+    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
+    #      np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
+    #      # Flatten the frame to 1D array
+    #      flattened_frame = np_frame.flatten().tolist()
+    #      #  flattened_frame = list(frame)
+    #
+    #      conversion_time = time.time() - start_time
+    #      start_time = time.time()
+    #
+    #      # List for holding DMX data
+    #      dmx_data = []
+    #
+    #      # Iterate over the flattened frame in chunks
+    #      for i in range(0, len(flattened_frame), 510):
+    #          # Update the chunk template
+    #          chunk_size = min(510, len(flattened_frame) - i)
+    #          self.chunk_template[1:chunk_size + 1] = flattened_frame[i:i + chunk_size]
+    #
+    #          # Append the chunk to DMX data
+    #          dmx_data.append((i//510 + 1, self.chunk_template[:chunk_size + 2]))  # Return as tuple (universe_id, universe_data)
+    #
+    #      chunking_time = time.time() - start_time
+    #
+    #      #  logging.info(f"Conversion time: {conversion_time}")
+    #      #  logging.info(f"Chunking time: {chunking_time}")
+    #
+    #      #  ##  Log the universe, channel, and data for the first pixel of each strip
+    #      #  channels_per_strip = self.num_pixels * 3
+    #      #  strip = 0
+    #      #  first_pixel_index = strip * channels_per_strip
+    #      #  universe = first_pixel_index // 510 + 1
+    #      #  channel = first_pixel_index % 510 + 1
+    #      #  data = flattened_frame[first_pixel_index:first_pixel_index+3]
+    #      #  logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+    #
+    #      return dmx_data
 
 
     #  def convert_frame_to_sacn_data(self, frame):
