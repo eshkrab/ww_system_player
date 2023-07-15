@@ -43,12 +43,11 @@ class SacnSend:
         for i in range(0, len(flattened_frame), 510):
             chunk = flattened_frame[i:i+510]
 
-            # Add a start code and an end code to the chunk
-            chunk_with_start_and_end = [0x00] + list(chunk) + [0xFF]
-            #  chunk_with_start_and_end = [0x00] + list(chunk)
+            # Add a start code to the chunk and pad the chunk to 512 bytes with 0xFF
+            chunk_with_start_and_pad = [0x00] + list(chunk) + [0xFF]*(512 - len(chunk) - 1)
 
-            # Add the chunk_with_start_and_end to dmx_data along with the current universe count
-            dmx_data.append((universe_count, chunk_with_start_and_end))
+            # Add the chunk_with_start_and_pad to dmx_data along with the current universe count
+            dmx_data.append((universe_count, bytes(chunk_with_start_and_pad)))
 
             # Increment the universe count
             universe_count += 1
@@ -64,9 +63,8 @@ class SacnSend:
             data = flattened_frame[first_pixel_index:first_pixel_index+3]
             logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
 
-        logging.debug(f"dmx_data: {dmx_data}")
-
         return dmx_data
+
 
 
     #####################################
