@@ -4,6 +4,7 @@ import array
 import logging
 import numpy as np
 import math 
+import time
 
 from typing import Callable, Optional, List, Dict, Union, Tuple
 
@@ -27,9 +28,14 @@ class SacnSend:
         self.sender.start()
         atexit.register(self.sender.stop)
 
+
     def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
+        start_time = time.time()
+
         np_frame = np.frombuffer(frame, dtype=np.uint8)
+        conversion_time = time.time()
         np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
+        scaling_time = time.time()
         flattened_frame = np_frame.flatten()
 
         # Initialize the universe count
@@ -56,18 +62,70 @@ class SacnSend:
             # Increment the universe count
             universe_count += 1
 
-        # Number of channels per strip
-        channels_per_strip = self.num_pixels * 3
+        chunking_time = time.time()
 
-        ##  Log the universe, channel, and data for the first pixel of each strip
-        strip = 0
-        first_pixel_index = strip * channels_per_strip
-        universe = first_pixel_index // 510 + 1
-        channel = first_pixel_index % 510 + 1
-        data = flattened_frame[first_pixel_index:first_pixel_index+3]
-        logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+        #  # Number of channels per strip
+        #  channels_per_strip = self.num_pixels * 3
+        #
+        #  # Log the universe, channel, and data for the first pixel of each strip
+        #  for strip in range(self.num_strips):
+        #      first_pixel_index = strip * channels_per_strip
+        #      universe = first_pixel_index // 510 + 1
+        #      channel = first_pixel_index % 510 + 1
+        #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
+        #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+
+        logging_time = time.time()
+
+        logging.info(f"Conversion time: {conversion_time - start_time}")
+        logging.info(f"Scaling time: {scaling_time - conversion_time}")
+        logging.info(f"Chunking time: {chunking_time - scaling_time}")
+        logging.info(f"Logging time: {logging_time - chunking_time}")
 
         return dmx_data
+
+
+    #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
+    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
+    #      np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
+    #      flattened_frame = np_frame.flatten()
+    #
+    #      # Initialize the universe count
+    #      universe_count = 1
+    #
+    #      # Initialize an empty list to hold the DMX data
+    #      dmx_data = []
+    #
+    #      # Prepare a template with padding in advance
+    #      chunk_template = np.full(512, fill_value=0xFF, dtype=np.uint8)
+    #      chunk_template[0] = 0x00  # start code
+    #
+    #      # Iterate over the flattened frame in chunks of 510
+    #      for i in range(0, len(flattened_frame), 510):
+    #          chunk = flattened_frame[i:i+510]
+    #          chunk_template[1:1+len(chunk)] = chunk  # Assign to a slice that matches the size of the chunk
+    #
+    #          # Add the chunk to dmx_data along with the current universe count
+    #          dmx_data.append((universe_count, bytes(chunk_template)))
+    #
+    #          # Reset chunk_template for next iteration
+    #          chunk_template[1:1+len(chunk)] = 0xFF
+    #
+    #          # Increment the universe count
+    #          universe_count += 1
+    #
+    #      # Number of channels per strip
+    #      channels_per_strip = self.num_pixels * 3
+    #
+    #      ##  Log the universe, channel, and data for the first pixel of each strip
+    #      strip = 0
+    #      first_pixel_index = strip * channels_per_strip
+    #      universe = first_pixel_index // 510 + 1
+    #      channel = first_pixel_index % 510 + 1
+    #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
+    #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+    #
+    #      return dmx_data
 
 
     #  def convert_frame_to_sacn_data(self, frame: np.array) -> List[List[int]]:
