@@ -75,12 +75,12 @@ class SacnSend:
         #      data = flattened_frame[first_pixel_index:first_pixel_index+3]
         #      logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
 
-        logging_time = time.time()
-
-        logging.info(f"Conversion time: {conversion_time - start_time}")
-        logging.info(f"Scaling time: {scaling_time - conversion_time}")
+        #  logging_time = time.time()
+        #
+        #  logging.info(f"Conversion time: {conversion_time - start_time}")
+        #  logging.info(f"Scaling time: {scaling_time - conversion_time}")
         #  logging.info(f"Chunking time: {chunking_time - scaling_time}")
-        logging.info(f"Logging time: {logging_time - chunking_time}")
+        #  logging.info(f"Logging time: {logging_time - chunking_time}")
 
         return dmx_data
 
