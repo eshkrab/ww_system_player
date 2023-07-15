@@ -41,8 +41,12 @@ class SacnSend:
         start_time = time.time()
 
         # Adjust brightness using the lookup table
-        frame = bytearray(self.brightness_table[b] for b in frame)
-        flattened_frame = list(frame)
+        #  frame = bytearray(self.brightness_table[b] for b in frame)
+        np_frame = np.frombuffer(frame, dtype=np.uint8)
+        np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)  # Scale and convert to uint8
+        # Flatten the frame to 1D array
+        flattened_frame = np_frame.flatten().tolist()
+        #  flattened_frame = list(frame)
 
         conversion_time = time.time() - start_time
         start_time = time.time()
@@ -61,17 +65,17 @@ class SacnSend:
         
         chunking_time = time.time() - start_time
 
-        #  logging.info(f"Conversion time: {conversion_time}")
-        #  logging.info(f"Chunking time: {chunking_time}")
+        logging.info(f"Conversion time: {conversion_time}")
+        logging.info(f"Chunking time: {chunking_time}")
 
-        ##  Log the universe, channel, and data for the first pixel of each strip
-        channels_per_strip = self.num_pixels * 3
-        strip = 0
-        first_pixel_index = strip * channels_per_strip
-        universe = first_pixel_index // 510 + 1
-        channel = first_pixel_index % 510 + 1
-        data = flattened_frame[first_pixel_index:first_pixel_index+3]
-        logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
+        #  ##  Log the universe, channel, and data for the first pixel of each strip
+        #  channels_per_strip = self.num_pixels * 3
+        #  strip = 0
+        #  first_pixel_index = strip * channels_per_strip
+        #  universe = first_pixel_index // 510 + 1
+        #  channel = first_pixel_index % 510 + 1
+        #  data = flattened_frame[first_pixel_index:first_pixel_index+3]
+        #  logging.debug(f"strip {strip} pixel 0 is universe {universe}, channel {channel}, data {data}")
         
         return dmx_data
 
