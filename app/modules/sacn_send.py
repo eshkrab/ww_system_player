@@ -6,6 +6,7 @@ import numpy as np
 import math 
 import time
 import itertools
+import cProfile
 
 
 from typing import Callable, Optional, List, Dict, Union, Tuple
@@ -38,6 +39,17 @@ class SacnSend:
     def set_brightness(self, brightness):
         self.brightness = brightness
         self.brightness_table = bytearray(int(i * brightness / 255) for i in range(256))
+        
+    def profile_convert_frame_to_sacn_data(self, frame):
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+        data = self.convert_frame_to_sacn_data(frame)
+
+        profiler.disable()
+        profiler.print_stats(sort='time')
+
+        return data
 
     def convert_frame_to_sacn_data(self, frame: bytearray):
         start = time.time()
@@ -425,5 +437,6 @@ class SacnSend:
     #          #  self.sender[i+1].dmx_data = scaled_data
 
     def send_frame(self, frame: np.array):
-        data = self.convert_frame_to_sacn_data(frame)
+        #  data = self.convert_frame_to_sacn_data(frame)
+        data = self.profile_convert_frame_to_sacn_data(frame)
         self.send_sacn_data(data)
