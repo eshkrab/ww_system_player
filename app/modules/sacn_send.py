@@ -51,9 +51,13 @@ class SacnSend:
 
         return data
 
-    def convert_frame_to_sacn_data(self, np_frame):
+    def convert_frame_to_sacn_data(self, frame):
+        #  np_frame = np.frombuffer(frame, dtype=np.uint8)
+        #  np_frame = (np_frame * (self.brightness / 255)).astype('uint8', casting='unsafe')
+
+        #  np_frame = (np.frombuffer(frame, dtype=np.uint8).astype(float) * (self.brightness / 255)).astype('uint8')
         # Directly convert to uint8 after scaling
-        np_frame = (np_frame * (self.brightness / 255)).astype('uint8', casting='unsafe')
+        np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
 
         # Concatenate original data with padding in one step
         padded_frame = np.pad(np_frame, (0, 512 - len(np_frame)), 'constant', constant_values=0)
