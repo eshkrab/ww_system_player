@@ -291,8 +291,8 @@ class SacnSend:
         logging.debug("Real data type:", type(real_data))
         logging.debug("Dummy data type:", type(dummy_data))
 
-        logging.debug("Real data type:", len(real_data))
-        logging.debug("Dummy data type:", len(dummy_data))
+        logging.debug("Real data len:", len(real_data))
+        logging.debug("Dummy data len:", len(dummy_data))
 
         #  logging.debug("Real data size:", len(real_data))
         #  logging.debug("Dummy data size:", len(dummy_data))
