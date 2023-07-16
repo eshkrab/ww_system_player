@@ -32,9 +32,13 @@ class SacnSend:
                 self.sender.activate_output(i) 
             if self.multi:
                 self.sender[i].multicast = True
+        dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels)
 
         self.sender.start()
         atexit.register(self.sender.stop)
+
+    def generate_dummy_frame(self, num_pixels):
+        return np.random.randint(0, 255, (num_pixels, 3), dtype=np.uint8).flatten()
 
     def set_brightness(self, brightness):
         self.brightness = brightness
@@ -259,8 +263,10 @@ class SacnSend:
         #  pr.enable()
 
         data = self.convert_frame_to_sacn_data(frame)
+        #create dummy data
         #  data = self.profile_convert_frame_to_sacn_data(frame)
         #  self.send_sacn_data(data)
+        self.send_sacn_data(dummy_frame)
 
         #  pr.disable()
         #  pr.print_stats(sort='time')
