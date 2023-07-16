@@ -164,13 +164,11 @@ class WWVideoPlayer:
         ps.print_stats()
         print(s.getvalue())
 
+
     def playback_loop(self):
         fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
-        pr = cProfile.Profile()
-
         while not self.stop_event.is_set():
             start_time = time.monotonic()
-
             with self.lock:
                 if self.state == VideoPlayerState.STOPPED:
                     break
@@ -186,11 +184,9 @@ class WWVideoPlayer:
                         logging.debug("No current video, loading")
                         self.load_video(self.current_video_index)
 
-                    pr.enable()  # Start profiling
                     if self.current_video:
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
-
                         if frame is not None:
                             if self.display_callback:
                                 callback_start_time = time.monotonic()
@@ -210,11 +206,12 @@ class WWVideoPlayer:
                                     self.next_video()
                                 else:
                                     self.stop()
-                    pr.disable()  # Stop profiling
+
+                        #  time.sleep(1/self.fps)
 
             # Measure fps
             end_time = time.monotonic()
-            # logging.debug(f"Frame took {end_time - start_time:.2f} seconds")
+            #  logging.debug(f"Frame took {end_time - start_time:.2f} seconds")
             fps = 1 / (end_time - start_time)
             fps_history.append(fps)
 
@@ -222,81 +219,14 @@ class WWVideoPlayer:
             if time.time() - self.last_fps_print_time >= 30:
                 avg_fps = sum(fps_history) / len(fps_history)
                 logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
-
-                threading.Thread(target=self.print_stats, args=(pr,)).start()  # Print profiling stats
-                pr = cProfile.Profile()  # Reset the profiler
-
                 fps_history.clear()
                 self.last_fps_print_time = time.time()
+
 
             # Returns immediately if the clear event is set, else waits for the timeout
             if self.stop_event.wait(1 / self.fps):
                 logging.debug("Stop event set, breaking")
                 break
-
-    #
-    #  def playback_loop(self):
-    #      fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
-    #      while not self.stop_event.is_set():
-    #          start_time = time.monotonic()
-    #          with self.lock:
-    #              if self.state == VideoPlayerState.STOPPED:
-    #                  break
-    #              elif self.state == VideoPlayerState.PAUSED:
-    #                  time.sleep(0.01)
-    #                  continue
-    #              elif self.state == VideoPlayerState.PLAYING:
-    #                  if not self.playlist:
-    #                      logging.debug("No playlist, loading")
-    #                      self.load_playlist()
-    #
-    #                  if not self.current_video and self.playlist:
-    #                      logging.debug("No current video, loading")
-    #                      self.load_video(self.current_video_index)
-    #
-    #                  if self.current_video:
-    #                      self.current_video.update()
-    #                      frame = self.current_video.get_next_frame()
-    #                      if frame is not None:
-    #                          if self.display_callback:
-    #                              callback_start_time = time.monotonic()
-    #                              self.display_callback(frame)
-    #                              callback_end_time = time.monotonic()
-    #                              callback_time = callback_end_time - callback_start_time
-    #
-    #                      else:
-    #                          logging.debug("Frame is None")
-    #                          self.current_video = None
-    #                          if self.mode == VideoPlayerMode.REPEAT_ONE:
-    #                              self.restart_video()
-    #                          elif self.mode == VideoPlayerMode.REPEAT:
-    #                              self.next_video()
-    #                          elif self.mode == VideoPlayerMode.REPEAT_NONE:
-    #                              if self.current_video_index < len(self.playlist["playlist"]) - 1:
-    #                                  self.next_video()
-    #                              else:
-    #                                  self.stop()
-    #
-    #                      #  time.sleep(1/self.fps)
-    #
-    #          # Measure fps
-    #          end_time = time.monotonic()
-    #          #  logging.debug(f"Frame took {end_time - start_time:.2f} seconds")
-    #          fps = 1 / (end_time - start_time)
-    #          fps_history.append(fps)
-    #
-    #          # Print fps every minute
-    #          if time.time() - self.last_fps_print_time >= 30:
-    #              avg_fps = sum(fps_history) / len(fps_history)
-    #              logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
-    #              fps_history.clear()
-    #              self.last_fps_print_time = time.time()
-    #
-    #
-    #          # Returns immediately if the clear event is set, else waits for the timeout
-    #          if self.stop_event.wait(1 / self.fps):
-    #              logging.debug("Stop event set, breaking")
-    #              break
 
     def load_playlist(self):
         if os.path.exists(self.playlist_path):
