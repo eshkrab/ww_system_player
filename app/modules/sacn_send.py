@@ -294,6 +294,14 @@ class SacnSend:
         logging.debug(f"Real data len:, {len(real_data) }")
         logging.debug(f"Dummy data len: {len(dummy_data)}")
 
+        logging.debug(f"Real data size:, {size(real_data) }")
+        logging.debug(f"Dummy data size: {size(dummy_data)}")
+
+        # Compare the first few elements of each list
+        for i in range(min(10, len(real_data), len(dummy_data))):
+              logging.debug(f"Element {i} - Real: {real_data[i]}, Dummy: {dummy_data[i]}")
+
+
         #  logging.debug("Real data size:", len(real_data))
         #  logging.debug("Dummy data size:", len(dummy_data))
 
