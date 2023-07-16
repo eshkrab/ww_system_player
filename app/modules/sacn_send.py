@@ -73,45 +73,6 @@ class SacnSend:
         return packetized_frame
 
 
-    #  def convert_frame_to_sacn_data(self, frame):
-    #      np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
-    #      #  # Convert to numpy array if frame is not already one
-    #      #  if not isinstance(frame, np.ndarray):
-    #      #      np_frame = np.array(frame, dtype=np.uint8)
-    #      #
-    #      #  # Apply brightness scaling
-    #      #  np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8, casting='unsafe')
-    #
-    #      # Split into groups of 510
-    #      packetized_frame = np.split(np_frame, np.arange(512, len(np_frame), 512))
-    #
-    #      # Convert numpy arrays directly to lists, add start code 0x00 at the beginning of each packet
-    #      packetized_frame = [[0x00] + packet.tolist() for packet in packetized_frame]
-    #
-    #      return packetized_frame
-
-
-    #  def convert_frame_to_sacn_data(self, frame):
-    #      #  np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #      #  np_frame = (np_frame * (self.brightness / 255)).astype('uint8', casting='unsafe')
-    #
-    #      #  np_frame = (np.frombuffer(frame, dtype=np.uint8).astype(float) * (self.brightness / 255)).astype('uint8')
-    #      # Directly convert to uint8 after scaling
-    #      np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
-    #
-    #      # Concatenate original data with padding in one step
-    #      padded_frame = np.pad(np_frame, (0, 512 - len(np_frame)), 'constant', constant_values=0)
-    #
-    #      # Split into groups of 510 (sACN packets can only have 510 channels of DMX data)
-    #      packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 510))
-    #      #  packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 512))
-    #
-    #      # Convert numpy arrays directly to lists
-    #      packetized_frame = [packet.tolist() for packet in packetized_frame]
-    #
-    #      return packetized_frame
-
-
     ################################
     ## WERKS, SLOW
     ################################
@@ -250,8 +211,11 @@ class SacnSend:
     #      # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
     #      return dmx_data
     def send_sacn_data(self, data):
+
+        self.sender.manual_flush = True
         for universe, packet in enumerate(data, start=1):
             self.sender[universe].dmx_data = packet
+        sender.flush()
 
       #  for universe, packet in enumerate(data, start=1):
       #      self.universe = universe
