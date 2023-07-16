@@ -188,10 +188,13 @@ class SacnSend:
     def send_sacn_data(self, data):
         pr = cProfile.Profile()
         pr.enable()
+
         for universe_id, universe_data in enumerate(data, start=1):  # starts numbering from 1
             self.sender[universe_id].dmx_data = universe_data.tolist()
+
         pr.disable()
         pr.print_stats(sort='time')
+        logging.debug("oi")
 
 
 
