@@ -285,14 +285,14 @@ class SacnSend:
     #          #  self.sender[i+1].dmx_data = scaled_data
     
     def compare_data(self, real_data, dummy_data):
-        logging.debug("Real data sample:", real_data[:10])  # Print first 10 elements
-        logging.debug("Dummy data sample:", dummy_data[:10])  # Print first 10 elements
+        #  logging.debug("Real data sample:", real_data[:10])  # Print first 10 elements
+        #  logging.debug("Dummy data sample:", dummy_data[:10])  # Print first 10 elements
 
         logging.debug("Real data type:", type(real_data))
         logging.debug("Dummy data type:", type(dummy_data))
 
-        logging.debug("Real data size:", len(real_data))
-        logging.debug("Dummy data size:", len(dummy_data))
+        #  logging.debug("Real data size:", len(real_data))
+        #  logging.debug("Dummy data size:", len(dummy_data))
 
     def send_frame(self, frame: np.array):
         #  pr = cProfile.Profile()
