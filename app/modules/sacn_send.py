@@ -295,10 +295,14 @@ class SacnSend:
         logging.debug(f"Real data len:, {len(real_data) }")
         logging.debug(f"Dummy data len: {len(dummy_data)}")
 
+        for i in range(0, len(dummy_data)):
+          logging.debug(f"Dummy data {i} len: {len(dummy_data[i])}")
+        for i in range(0, len(real_data)):
+          logging.debug(f"real data {i} len: {len(real_data[i])}")
 
-        # Compare the first few elements of each list
-        for i in range(min(10, len(real_data), len(dummy_data))):
-              logging.debug(f"Element {i} - Real: {real_data[i]}, Dummy: {dummy_data[i]}")
+        #  # Compare the first few elements of each list
+        #  for i in range(min(10, len(real_data), len(dummy_data))):
+        #        logging.debug(f"Element {i} - Real: {real_data[i]}, Dummy: {dummy_data[i]}")
 
 
         #  logging.debug("Real data size:", len(real_data))
@@ -311,15 +315,15 @@ class SacnSend:
         self.dmx_data = self.convert_frame_to_sacn_data(frame)
         #  data = self.profile_convert_frame_to_sacn_data(frame)
         #create dummy data
-        self.send_sacn_data(self.dmx_data)
+        #  self.send_sacn_data(self.dmx_data)
 # Generate dummy frame from real data
         #  dummy_frame = self.generate_dummy_frame_from_real_data(frame)
 
         # Send dummy frame
         #  self.send_sacn_data(dummy_fame)
-        #  self.dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels* 3)
-        #  self.compare_data(data, self.dummy_frame)
-        #  self.send_sacn_data(self.dummy_frame)
+        self.dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels* 3)
+        self.compare_data(data, self.dummy_frame)
+        self.send_sacn_data(self.dummy_frame)
 
         #  pr.disable()
         #  pr.print_stats(sort='time')
