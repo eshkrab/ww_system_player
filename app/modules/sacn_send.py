@@ -284,7 +284,7 @@ class SacnSend:
     #          #  scaled_data = [round(byte * float(self.brightness / 255.0)) for byte in data[i]]
     #          #  self.sender[i+1].dmx_data = scaled_data
     
-    def compare_data(real_data, dummy_data):
+    def compare_data(self, real_data, dummy_data):
         logging.debug("Real data sample:", real_data[:10])  # Print first 10 elements
         logging.debug("Dummy data sample:", dummy_data[:10])  # Print first 10 elements
 
