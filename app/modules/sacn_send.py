@@ -215,7 +215,7 @@ class SacnSend:
         self.sender.manual_flush = True
         for universe, packet in enumerate(data, start=1):
             self.sender[universe].dmx_data = packet
-        sender.flush()
+        self.sender.flush()
 
       #  for universe, packet in enumerate(data, start=1):
       #      self.universe = universe
