@@ -15,7 +15,7 @@ class SacnSend:
     def __init__(self, bind_address = "127.0.0.1", num_strips=1, num_pixels=1, multicast=True, dummy=False, brightness = 50.0):
         self.multi = multicast
         self.sender = sacn.sACNsender(bind_address)
-        self.sender.fps = 60
+        self.sender.fps = 30
         self.brightness = brightness
         self.set_brightness(brightness)
         self.num_strips = num_strips
@@ -212,10 +212,10 @@ class SacnSend:
     #      return dmx_data
     def send_sacn_data(self, data):
 
-        self.sender.manual_flush = True
+        #  self.sender.manual_flush = True
         for universe, packet in enumerate(data, start=1):
             self.sender[universe].dmx_data = packet
-        self.sender.flush()
+        #  self.sender.flush()
 
       #  for universe, packet in enumerate(data, start=1):
       #      self.universe = universe
