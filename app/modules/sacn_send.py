@@ -63,8 +63,8 @@ class SacnSend:
         padded_frame = np.pad(np_frame, (0, 512 - len(np_frame)), 'constant', constant_values=0)
 
         # Split into groups of 510 (sACN packets can only have 510 channels of DMX data)
-        #  packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 510))
-        packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 512))
+        packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 510))
+        #  packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 512))
 
         # Convert numpy arrays directly to lists
         packetized_frame = [packet.tolist() for packet in packetized_frame]
