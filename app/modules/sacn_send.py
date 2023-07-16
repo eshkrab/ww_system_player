@@ -186,15 +186,9 @@ class SacnSend:
     #      # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
     #      return dmx_data
     def send_sacn_data(self, data):
-        logging.debug("oi")
-        #  pr = cProfile.Profile()
-        #  pr.enable()
 
         for universe_id, universe_data in enumerate(data, start=1):  # starts numbering from 1
             self.sender[universe_id].dmx_data = universe_data.tolist()
-
-        #  pr.disable()
-        #  pr.print_stats(sort='time')
 
 
 
@@ -226,6 +220,13 @@ class SacnSend:
     #          #  self.sender[i+1].dmx_data = scaled_data
 
     def send_frame(self, frame: np.array):
-        #  data = self.convert_frame_to_sacn_data(frame)
-        data = self.profile_convert_frame_to_sacn_data(frame)
+        pr = cProfile.Profile()
+        pr.enable()
+
+        data = self.convert_frame_to_sacn_data(frame)
+        #  data = self.profile_convert_frame_to_sacn_data(frame)
         self.send_sacn_data(data)
+
+        pr.disable()
+        pr.print_stats(sort='time')
+
