@@ -37,8 +37,24 @@ class SacnSend:
         self.sender.start()
         atexit.register(self.sender.stop)
 
-    def generate_dummy_frame(self, num_pixels):
-        return np.random.randint(0, 255, (num_pixels, 3), dtype=np.uint8).flatten()
+    def generate_dummy_frame(self, total_size):
+        # Create a frame filled with random data
+        np_frame = np.random.randint(low=0, high=256, size=total_size, dtype=np.uint8)
+
+        # Calculate the number of chunks and the size of the padded frame
+        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
+
+        # Create a zero-padded frame
+        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
+        padded_frame[:total_size] = np_frame  # Copy original data
+
+        # Reshape to (-1, 512)
+        packetized_frame = padded_frame.reshape(-1, 512)
+
+        # Convert numpy arrays directly to lists of bytes
+        packetized_frame = [packet.tobytes() for packet in packetized_frame]
+
+        return packetized_frame
 
     def set_brightness(self, brightness):
         self.brightness = brightness
@@ -263,10 +279,10 @@ class SacnSend:
         #  pr.enable()
 
         data = self.convert_frame_to_sacn_data(frame)
-        #create dummy data
         #  data = self.profile_convert_frame_to_sacn_data(frame)
-        #  self.send_sacn_data(data)
-        self.send_sacn_data(self.dummy_frame)
+        #create dummy data
+        self.send_sacn_data(data)
+        #  self.send_sacn_data(self.dummy_frame)
 
         #  pr.disable()
         #  pr.print_stats(sort='time')
