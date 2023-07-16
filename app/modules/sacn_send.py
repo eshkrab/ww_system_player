@@ -37,6 +37,15 @@ class SacnSend:
         self.sender.start()
         atexit.register(self.sender.stop)
 
+    def generate_dummy_frame_from_real_data(self, real_frame):
+        # Convert real frame to sACN data
+        real_data = self.convert_frame_to_sacn_data(real_frame)
+
+        # Duplicate real_data to create dummy frame
+        dummy_frame = real_data * (self.num_strips * self.num_pixels // len(real_data))
+
+        return dummy_frame
+
     def generate_dummy_frame(self, total_size):
         # Create a frame filled with random data
         np_frame = np.random.randint(low=0, high=256, size=total_size, dtype=np.uint8)
@@ -278,10 +287,15 @@ class SacnSend:
         #  pr = cProfile.Profile()
         #  pr.enable()
 
-        data = self.convert_frame_to_sacn_data(frame)
+        #  data = self.convert_frame_to_sacn_data(frame)
         #  data = self.profile_convert_frame_to_sacn_data(frame)
         #create dummy data
-        self.send_sacn_data(data)
+        #  self.send_sacn_data(data)
+# Generate dummy frame from real data
+        dummy_frame = self.generate_dummy_frame_from_real_data(frame)
+
+        # Send dummy frame
+        self.send_sacn_data(dummy_frame)
         #  self.dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels)
         #  self.send_sacn_data(self.dummy_frame)
 
