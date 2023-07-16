@@ -278,11 +278,11 @@ class SacnSend:
         #  pr = cProfile.Profile()
         #  pr.enable()
 
-        data = self.convert_frame_to_sacn_data(frame)
+        #  data = self.convert_frame_to_sacn_data(frame)
         #  data = self.profile_convert_frame_to_sacn_data(frame)
         #create dummy data
-        self.send_sacn_data(data)
-        #  self.send_sacn_data(self.dummy_frame)
+        #  self.send_sacn_data(data)
+        self.send_sacn_data(self.dummy_frame)
 
         #  pr.disable()
         #  pr.print_stats(sort='time')
