@@ -229,7 +229,7 @@ class SacnSend:
     #      return dmx_data
     def send_sacn_data(self, data):
 
-      for universe, packet in enumerate(sacn_data, start=1):
+      for universe, packet in enumerate(data, start=1):
           self.universe = universe
           self.sender[universe].dmx_data = packet
           #  self.sender.flush()
