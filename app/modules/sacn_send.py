@@ -260,7 +260,7 @@ class SacnSend:
 
         data = self.convert_frame_to_sacn_data(frame)
         #  data = self.profile_convert_frame_to_sacn_data(frame)
-        self.send_sacn_data(data)
+        #  self.send_sacn_data(data)
 
         #  pr.disable()
         #  pr.print_stats(sort='time')
