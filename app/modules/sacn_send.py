@@ -283,6 +283,16 @@ class SacnSend:
     #          #  # scale data by brightness
     #          #  scaled_data = [round(byte * float(self.brightness / 255.0)) for byte in data[i]]
     #          #  self.sender[i+1].dmx_data = scaled_data
+    
+    def compare_data(real_data, dummy_data):
+        logging.debug("Real data sample:", real_data[:10])  # Print first 10 elements
+        logging.debug("Dummy data sample:", dummy_data[:10])  # Print first 10 elements
+
+        logging.debug("Real data type:", type(real_data))
+        logging.debug("Dummy data type:", type(dummy_data))
+
+        logging.debug("Real data size:", len(real_data))
+        logging.debug("Dummy data size:", len(dummy_data))
 
     def send_frame(self, frame: np.array):
         #  pr = cProfile.Profile()
@@ -298,6 +308,7 @@ class SacnSend:
         # Send dummy frame
         #  self.send_sacn_data(dummy_fame)
         self.dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels* 3)
+        self.compare_data(data, self.dummy_frame)
         self.send_sacn_data(self.dummy_frame)
 
         #  pr.disable()
