@@ -220,11 +220,11 @@ class SacnSend:
     #          #  self.sender[i+1].dmx_data = scaled_data
 
     def send_frame(self, frame: np.array):
-        pr = cProfile.Profile()
-        pr.enable()
 
         data = self.convert_frame_to_sacn_data(frame)
         #  data = self.profile_convert_frame_to_sacn_data(frame)
+        pr = cProfile.Profile()
+        pr.enable()
         self.send_sacn_data(data)
 
         pr.disable()
