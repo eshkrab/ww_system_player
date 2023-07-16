@@ -61,10 +61,10 @@ class SacnSend:
         #  np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8, casting='unsafe')
 
         # Split into groups of 510
-        packetized_frame = np.split(np_frame, np.arange(512, len(np_frame), 512))
+        packetized_frame = np.split(np_frame, np.arange(510, len(np_frame), 510))
 
-        # Convert numpy arrays directly to lists
-        packetized_frame = [packet.tolist() for packet in packetized_frame]
+        # Convert numpy arrays directly to lists, add start code 0x00 at the beginning of each packet
+        packetized_frame = [[0x00] + packet.tolist() for packet in packetized_frame]
 
         return packetized_frame
 
@@ -228,14 +228,16 @@ class SacnSend:
     #      # as we return pixel color data alongside with channels and universe ids, we need to use a tuple or similar construct
     #      return dmx_data
     def send_sacn_data(self, data):
+        for universe, packet in enumerate(data, start=1):
+            self.sender[universe].dmx_data = packet
 
-      for universe, packet in enumerate(data, start=1):
-          self.universe = universe
-          self.sender[universe].dmx_data = packet
-          #  self.sender.flush()
-
-        #  for universe_id, universe_data in enumerate(data, start=1):  # starts numbering from 1
-        #      self.sender[universe_id].dmx_data = universe_data.tolist()
+      #  for universe, packet in enumerate(data, start=1):
+      #      self.universe = universe
+      #      self.sender[universe].dmx_data = packet
+      #      #  self.sender.flush()
+      #
+      #    #  for universe_id, universe_data in enumerate(data, start=1):  # starts numbering from 1
+      #    #      self.sender[universe_id].dmx_data = universe_data.tolist()
 
 
 
