@@ -51,39 +51,59 @@ class SacnSend:
 
         return data
 
-    def convert_frame_to_sacn_data(self, frame):
-        start_time = time.time()
-        np_frame = np.frombuffer(frame, dtype=np.uint8)
+    def convert_frame_to_sacn_data(self, np_frame):
+        # Directly convert to uint8 after scaling
+        np_frame = (np_frame * (self.brightness / 255)).astype('uint8', casting='unsafe')
 
-        # Scale brightness
-        np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)
+        # Concatenate original data with padding in one step
+        padded_frame = np.pad(np_frame, (0, 512 - len(np_frame)), 'constant', constant_values=0)
 
-        end_time = time.time()
-        #  logging.debug(f'Conversion and scaling time: {end_time - start_time}')
+        # Split into groups of 510 (sACN packets can only have 510 channels of DMX data)
+        #  packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 510))
+        packetized_frame = np.split(padded_frame, np.ceil(len(padded_frame) / 512))
 
-        # Reshape to (-1, 510), padding with zeros if necessary
-        start_time = time.time()
-        total_size = np_frame.size
-        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
-        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
-        padded_frame[:total_size] = np_frame  # Copy original data
+        # Convert numpy arrays directly to lists
+        packetized_frame = [packet.tolist() for packet in packetized_frame]
 
-        # Now reshape to (-1, 510)
-        chunks = padded_frame.reshape(-1, 512)
-        #  # Reshape to (-1, 510), padding with zeros if necessary
-        #  start_time = time.time()
-        #  total_size = np_frame.size
-        #  num_chunks = (total_size + 509) // 510  # Compute number of chunks, rounding up
-        #  padded_frame = np.zeros(num_chunks * 510, dtype=np.uint8)
-        #  padded_frame[:total_size] = np_frame  # Copy original data
-        #
-        #  # Now reshape to (-1, 510)
-        #  chunks = padded_frame.reshape(-1, 510)
+        return packetized_frame
 
-        end_time = time.time()
-        #  logging.debug(f'Chunking time: {end_time - start_time}')
 
-        return chunks
+    ################################
+    ## WERKS, SLOW
+    ################################
+    #  def convert_frame_to_sacn_data(self, frame):
+    #      start_time = time.time()
+    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
+    #
+    #      # Scale brightness
+    #      np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)
+    #
+    #      end_time = time.time()
+    #      #  logging.debug(f'Conversion and scaling time: {end_time - start_time}')
+    #
+    #      # Reshape to (-1, 510), padding with zeros if necessary
+    #      start_time = time.time()
+    #      total_size = np_frame.size
+    #      num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
+    #      padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
+    #      padded_frame[:total_size] = np_frame  # Copy original data
+    #
+    #      # Now reshape to (-1, 510)
+    #      chunks = padded_frame.reshape(-1, 512)
+    #      #  # Reshape to (-1, 510), padding with zeros if necessary
+    #      #  start_time = time.time()
+    #      #  total_size = np_frame.size
+    #      #  num_chunks = (total_size + 509) // 510  # Compute number of chunks, rounding up
+    #      #  padded_frame = np.zeros(num_chunks * 510, dtype=np.uint8)
+    #      #  padded_frame[:total_size] = np_frame  # Copy original data
+    #      #
+    #      #  # Now reshape to (-1, 510)
+    #      #  chunks = padded_frame.reshape(-1, 510)
+    #
+    #      end_time = time.time()
+    #      #  logging.debug(f'Chunking time: {end_time - start_time}')
+    #
+    #      return chunks
 
 
     ##################### 22 FPS
@@ -187,8 +207,13 @@ class SacnSend:
     #      return dmx_data
     def send_sacn_data(self, data):
 
-        for universe_id, universe_data in enumerate(data, start=1):  # starts numbering from 1
-            self.sender[universe_id].dmx_data = universe_data.tolist()
+      for universe, packet in enumerate(sacn_data, start=1):
+          self.universe = universe
+          self.sender[universe].dmx_data = packet
+          #  self.sender.flush()
+
+        #  for universe_id, universe_data in enumerate(data, start=1):  # starts numbering from 1
+        #      self.sender[universe_id].dmx_data = universe_data.tolist()
 
 
 
@@ -220,11 +245,11 @@ class SacnSend:
     #          #  self.sender[i+1].dmx_data = scaled_data
 
     def send_frame(self, frame: np.array):
+        pr = cProfile.Profile()
+        pr.enable()
 
         data = self.convert_frame_to_sacn_data(frame)
         #  data = self.profile_convert_frame_to_sacn_data(frame)
-        pr = cProfile.Profile()
-        pr.enable()
         self.send_sacn_data(data)
 
         pr.disable()
