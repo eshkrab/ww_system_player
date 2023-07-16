@@ -186,17 +186,16 @@ class WWVideoPlayer:
                         logging.debug("No current video, loading")
                         self.load_video(self.current_video_index)
 
+                    pr.enable()  # Start profiling
                     if self.current_video:
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
 
                         if frame is not None:
                             if self.display_callback:
-                                pr.enable()  # Start profiling
                                 callback_start_time = time.monotonic()
                                 self.display_callback(frame)
                                 callback_end_time = time.monotonic()
-                                pr.disable()  # Stop profiling
                                 callback_time = callback_end_time - callback_start_time
 
                         else:
@@ -211,6 +210,7 @@ class WWVideoPlayer:
                                     self.next_video()
                                 else:
                                     self.stop()
+                    pr.disable()  # Stop profiling
 
             # Measure fps
             end_time = time.monotonic()
