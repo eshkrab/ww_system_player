@@ -52,63 +52,63 @@ class SacnSend:
         return data
 
 
-    def convert_frame_to_sacn_data(self, frame):
-        # Convert frame to numpy array and apply brightness scaling
-        np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
-
-        # Calculate the number of chunks and the size of the padded frame
-        total_size = np_frame.size
-        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
-
-        # Create a zero-padded frame
-        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
-        padded_frame[:total_size] = np_frame  # Copy original data
-
-        # Reshape to (-1, 512)
-        packetized_frame = padded_frame.reshape(-1, 512)
-
-        # Convert numpy arrays directly to lists of bytes
-        packetized_frame = [packet.tobytes() for packet in packetized_frame]
-
-        return packetized_frame
+    #  def convert_frame_to_sacn_data(self, frame):
+    #      # Convert frame to numpy array and apply brightness scaling
+    #      np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
+    #
+    #      # Calculate the number of chunks and the size of the padded frame
+    #      total_size = np_frame.size
+    #      num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
+    #
+    #      # Create a zero-padded frame
+    #      padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
+    #      padded_frame[:total_size] = np_frame  # Copy original data
+    #
+    #      # Reshape to (-1, 512)
+    #      packetized_frame = padded_frame.reshape(-1, 512)
+    #
+    #      # Convert numpy arrays directly to lists of bytes
+    #      packetized_frame = [packet.tobytes() for packet in packetized_frame]
+    #
+    #      return packetized_frame
 
 
     ################################
     ## WERKS, SLOW
     ################################
-    #  def convert_frame_to_sacn_data(self, frame):
-    #      start_time = time.time()
-    #      np_frame = np.frombuffer(frame, dtype=np.uint8)
-    #
-    #      # Scale brightness
-    #      np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)
-    #
-    #      end_time = time.time()
-    #      #  logging.debug(f'Conversion and scaling time: {end_time - start_time}')
-    #
-    #      # Reshape to (-1, 510), padding with zeros if necessary
-    #      start_time = time.time()
-    #      total_size = np_frame.size
-    #      num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
-    #      padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
-    #      padded_frame[:total_size] = np_frame  # Copy original data
-    #
-    #      # Now reshape to (-1, 510)
-    #      chunks = padded_frame.reshape(-1, 512)
-    #      #  # Reshape to (-1, 510), padding with zeros if necessary
-    #      #  start_time = time.time()
-    #      #  total_size = np_frame.size
-    #      #  num_chunks = (total_size + 509) // 510  # Compute number of chunks, rounding up
-    #      #  padded_frame = np.zeros(num_chunks * 510, dtype=np.uint8)
-    #      #  padded_frame[:total_size] = np_frame  # Copy original data
-    #      #
-    #      #  # Now reshape to (-1, 510)
-    #      #  chunks = padded_frame.reshape(-1, 510)
-    #
-    #      end_time = time.time()
-    #      #  logging.debug(f'Chunking time: {end_time - start_time}')
-    #
-    #      return chunks
+    def convert_frame_to_sacn_data(self, frame):
+        start_time = time.time()
+        np_frame = np.frombuffer(frame, dtype=np.uint8)
+
+        # Scale brightness
+        np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)
+
+        end_time = time.time()
+        #  logging.debug(f'Conversion and scaling time: {end_time - start_time}')
+
+        # Reshape to (-1, 510), padding with zeros if necessary
+        start_time = time.time()
+        total_size = np_frame.size
+        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
+        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
+        padded_frame[:total_size] = np_frame  # Copy original data
+
+        # Now reshape to (-1, 510)
+        chunks = padded_frame.reshape(-1, 512)
+        #  # Reshape to (-1, 510), padding with zeros if necessary
+        #  start_time = time.time()
+        #  total_size = np_frame.size
+        #  num_chunks = (total_size + 509) // 510  # Compute number of chunks, rounding up
+        #  padded_frame = np.zeros(num_chunks * 510, dtype=np.uint8)
+        #  padded_frame[:total_size] = np_frame  # Copy original data
+        #
+        #  # Now reshape to (-1, 510)
+        #  chunks = padded_frame.reshape(-1, 510)
+
+        end_time = time.time()
+        #  logging.debug(f'Chunking time: {end_time - start_time}')
+
+        return chunks
 
 
     ##################### 22 FPS
