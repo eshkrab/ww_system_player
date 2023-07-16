@@ -51,22 +51,44 @@ class SacnSend:
 
         return data
 
+
     def convert_frame_to_sacn_data(self, frame):
+        # Convert frame to numpy array and apply brightness scaling
         np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
-        #  # Convert to numpy array if frame is not already one
-        #  if not isinstance(frame, np.ndarray):
-        #      np_frame = np.array(frame, dtype=np.uint8)
-        #
-        #  # Apply brightness scaling
-        #  np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8, casting='unsafe')
 
-        # Split into groups of 510
-        packetized_frame = np.split(np_frame, np.arange(512, len(np_frame), 512))
+        # Calculate the number of chunks and the size of the padded frame
+        total_size = np_frame.size
+        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
 
-        # Convert numpy arrays directly to lists, add start code 0x00 at the beginning of each packet
-        packetized_frame = [[0x00] + packet.tolist() for packet in packetized_frame]
+        # Create a zero-padded frame
+        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
+        padded_frame[:total_size] = np_frame  # Copy original data
+
+        # Reshape to (-1, 512)
+        packetized_frame = padded_frame.reshape(-1, 512)
+
+        # Convert numpy arrays directly to lists of bytes
+        packetized_frame = [packet.tobytes() for packet in packetized_frame]
 
         return packetized_frame
+
+
+    #  def convert_frame_to_sacn_data(self, frame):
+    #      np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
+    #      #  # Convert to numpy array if frame is not already one
+    #      #  if not isinstance(frame, np.ndarray):
+    #      #      np_frame = np.array(frame, dtype=np.uint8)
+    #      #
+    #      #  # Apply brightness scaling
+    #      #  np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8, casting='unsafe')
+    #
+    #      # Split into groups of 510
+    #      packetized_frame = np.split(np_frame, np.arange(512, len(np_frame), 512))
+    #
+    #      # Convert numpy arrays directly to lists, add start code 0x00 at the beginning of each packet
+    #      packetized_frame = [[0x00] + packet.tolist() for packet in packetized_frame]
+    #
+    #      return packetized_frame
 
 
     #  def convert_frame_to_sacn_data(self, frame):
