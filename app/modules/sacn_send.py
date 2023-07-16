@@ -61,7 +61,7 @@ class SacnSend:
         #  np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8, casting='unsafe')
 
         # Split into groups of 510
-        packetized_frame = np.split(np_frame, np.arange(510, len(np_frame), 510))
+        packetized_frame = np.split(np_frame, np.arange(512, len(np_frame), 512))
 
         # Convert numpy arrays directly to lists
         packetized_frame = [packet.tolist() for packet in packetized_frame]
