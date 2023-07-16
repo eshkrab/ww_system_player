@@ -266,7 +266,7 @@ class SacnSend:
         #create dummy data
         #  data = self.profile_convert_frame_to_sacn_data(frame)
         #  self.send_sacn_data(data)
-        self.send_sacn_data(dummy_frame)
+        self.send_sacn_data(self.dummy_frame)
 
         #  pr.disable()
         #  pr.print_stats(sort='time')
