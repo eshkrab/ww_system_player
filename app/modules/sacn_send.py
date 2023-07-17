@@ -33,7 +33,7 @@ class SacnSend:
             if self.multi:
                 self.sender[i].multicast = True
         self.dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels * 3)
-        self.dmx_data = self.generate_dummy_frame(self.num_strips * self.num_pixels * 3)
+        #  self.dmx_data = self.generate_dummy_frame(self.num_strips * self.num_pixels * 3)
 
         self.sender.start()
         atexit.register(self.sender.stop)
@@ -321,7 +321,7 @@ class SacnSend:
 
         # Send dummy frame
         #  self.send_sacn_data(dummy_fame)
-        self.dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels* 3)
+        #  self.dummy_frame = self.generate_dummy_frame(self.num_strips * self.num_pixels* 3)
         #  self.compare_data(self.dmx_data, self.dummy_frame)
         self.send_sacn_data(self.dummy_frame)
 
