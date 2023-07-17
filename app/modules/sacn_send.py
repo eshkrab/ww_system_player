@@ -312,7 +312,7 @@ class SacnSend:
         #  pr = cProfile.Profile()
         #  pr.enable()
 
-        self.dmx_data = self.convert_frame_to_sacn_data(frame)
+        #  self.dmx_data = self.convert_frame_to_sacn_data(frame)
         #  data = self.profile_convert_frame_to_sacn_data(frame)
         #create dummy data
         #  self.send_sacn_data(self.dmx_data)
