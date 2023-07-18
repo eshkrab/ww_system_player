@@ -207,7 +207,7 @@ class WWVideoPlayer:
                                 else:
                                     self.stop()
 
-                        time.sleep(1/self.fps)
+                        #  time.sleep(1/self.fps)
 
             # Measure fps
             end_time = time.monotonic()
