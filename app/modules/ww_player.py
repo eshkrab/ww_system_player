@@ -185,14 +185,23 @@ class WWVideoPlayer:
                         self.load_video(self.current_video_index)
 
                     if self.current_video:
+                        start_time = time.monotonic()
+# processing code
+                        
                         self.current_video.update()
                         frame = self.current_video.get_next_frame()
+                        processing_end_time = time.monotonic()
+                        logging.debug(f"Processing took {processing_end_time - start_time:.6f} seconds")
                         if frame is not None:
                             if self.display_callback:
                                 callback_start_time = time.monotonic()
                                 self.display_callback(frame)
                                 callback_end_time = time.monotonic()
                                 callback_time = callback_end_time - callback_start_time
+                            # sending code
+                            sending_end_time = time.monotonic()
+                            logging.debug(f"Sending took {sending_end_time - processing_end_time:.6f} seconds")
+
 
                         else:
                             logging.debug("Frame is None")
@@ -207,7 +216,7 @@ class WWVideoPlayer:
                                 else:
                                     self.stop()
 
-                        time.sleep(1/self.fps)
+                        #  time.sleep(1/self.fps)
 
             # Measure fps
             end_time = time.monotonic()
