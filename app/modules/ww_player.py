@@ -36,7 +36,7 @@ class VideoPlayerMode(Enum):
 
 class WWVideoPlayer:
 
-    def __init__(self, ws_queue, video_dir: str, fps: int = 30, display_callback: Optional[Callable[[np.array], None]] = None):
+    def __init__(self, ws_queue, video_dir: str, fps: int = 60, display_callback: Optional[Callable[[np.array], None]] = None):
         self.video_dir = video_dir
         self.ws_queue = ws_queue
         self.fps = fps
@@ -207,7 +207,7 @@ class WWVideoPlayer:
                                 else:
                                     self.stop()
 
-                        #  time.sleep(1/self.fps)
+                        time.sleep(1/self.fps)
 
             # Measure fps
             end_time = time.monotonic()
