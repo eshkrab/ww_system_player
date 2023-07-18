@@ -106,7 +106,8 @@ class SacnSend:
         # Send each SACN universe data
         for universe, packet in enumerate(data, start=1):
             # Create header for each frame
-            header = self._create_header(universe, 
+            logging.debug(f"universe {universe}")
+            header = self._create_header(int(universe), 
                                          source_name=source_name, 
                                          priority=priority, 
                                          sequence_number=sequence_number,
