@@ -51,7 +51,7 @@ class SacnSend:
             b'ASC-E1.17\x00\x00\x00',  # preamble
             0x7000 | (638 & 0x0FFF),  # flags and length
             4,  # vector
-            b'litpisACN\x00' + (b'\x00' * (64 - 11)),  # source name
+            b'pySimpleACN\x00' + (b'\x00' * (64 - 11)),  # source name
             100,  # priority
             0,  # reserved
             0,  # sequence number
