@@ -46,26 +46,45 @@ class SacnSend:
             packet = header + data
             self.sock.sendto(packet, (multicast_ip, self.port))
 
-    def _create_header(self, dlen, universe):
-        return struct.pack('!16sHHHHHHHHIxxHBBBBBBBxxBBBH',
-                           b'ASC-E1.17\0\0\0',
-                           0x7000 | (638 + dlen),
-                           0x7000 | 22,
-                           0x0000,
-                           0x0004,
-                           0x7000 | 38,
-                           0x0000,
-                           0x0400,
-                           0x7000 | 638,
-                           1,
-                           0x0000,
-                           universe,
-                           0x0201,
-                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                           0x04,
-                           0x01,
-                           0x7000 | dlen,
-                           0x00)
+    def _create_header(self, length, universe):
+        return struct.pack('!16sHHHHHHHHIxxHBBBBBBBxH',
+            b'ASC-E1.17\x00\x00\x00',  # preamble
+            0x7000 | (638 & 0x0FFF),  # flags and length
+            4,  # vector
+            b'litpisACN\x00' + (b'\x00' * (64 - 11)),  # source name
+            100,  # priority
+            0,  # reserved
+            0,  # sequence number
+            0,  # options
+            universe,  # universe
+            0x7000 | (length & 0x0FFF),  # flags and length
+            2,  # vector
+            0xa1,  # address type & data type
+            0,  # first property address
+            1,  # address increment
+            length  # property value count
+        )
+
+    #  def _create_header(self, dlen, universe):
+    #      return struct.pack('!16sHHHHHHHHIxxHBBBBBBBxxBBBH',
+    #                         b'ASC-E1.17\0\0\0',
+    #                         0x7000 | (638 + dlen),
+    #                         0x7000 | 22,
+    #                         0x0000,
+    #                         0x0004,
+    #                         0x7000 | 38,
+    #                         0x0000,
+    #                         0x0400,
+    #                         0x7000 | 638,
+    #                         1,
+    #                         0x0000,
+    #                         universe,
+    #                         0x0201,
+    #                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    #                         0x04,
+    #                         0x01,
+    #                         0x7000 | dlen,
+    #                         0x00)
 
     @staticmethod
     def convert_frame_to_sacn_data(frame, brightness=1.0):
