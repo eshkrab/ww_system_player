@@ -94,7 +94,7 @@ class SacnSend:
         for universe, packet in enumerate(data, start=1):
             header = self._create_header(universe)
             header[126:638] = packet  # channel data
-            self._socket.sendto(header, ('239.255.0.' + str(universe), self.port))
+            self.socket.sendto(header, ('239.255.0.' + str(universe), self.port))
 
 
     def convert_frame_to_sacn_data(self, frame):
