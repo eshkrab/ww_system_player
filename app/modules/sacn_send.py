@@ -99,18 +99,19 @@ class SacnSend:
 
     def convert_frame_to_sacn_data(self, frame):
         # Convert frame to numpy array and apply brightness scaling
-        np_frame = np.frombuffer(frame, dtype=np.uint8)
+        #  np_frame = np.frombuffer(frame, dtype=np.uint8)
+        np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
 
         # Calculate the number of chunks and the size of the padded frame
         total_size = np_frame.size
-        num_chunks = (total_size + 510) // 511  # Compute number of chunks, rounding up
+        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
 
         # Create a zero-padded frame
-        padded_frame = np.zeros(num_chunks * 511, dtype=np.uint8)
+        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
         padded_frame[:total_size] = np_frame  # Copy original data
 
         # Reshape to (-1, 511)
-        packetized_frame = padded_frame.reshape(-1, 511)
+        packetized_frame = padded_frame.reshape(-1, 512)
 
         # Convert numpy arrays directly to lists of bytes
         packetized_frame = [packet.tobytes() for packet in packetized_frame]
