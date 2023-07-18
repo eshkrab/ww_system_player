@@ -13,6 +13,7 @@ import struct
 
 class SacnSend:
     def __init__(self, bind_address = "127.0.0.1", num_strips=1, num_pixels=1, multicast=True, dummy=False, brightness = 50.0, start_universe=1, port=5568):
+        self.bind_address = bind_address
         self.multi = multicast
         self.brightness = brightness
         self.set_brightness(brightness)
