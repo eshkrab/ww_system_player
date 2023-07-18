@@ -15,6 +15,7 @@ import struct
 
 class SacnSend:
     def __init__(self, bind_address = "127.0.0.1", num_strips=1, num_pixels=1, multicast=True, dummy=False, brightness = 50.0, start_universe=1, port=5568):
+        self.port = port
         self.bind_address = bind_address
         self.multi = multicast
         self.brightness = brightness
@@ -31,6 +32,8 @@ class SacnSend:
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # Bind the socket to a specific network interface
         self.socket.bind((self.bind_address, 0))
+        # Create the base sACN header
+        self._base_header = self._create_base_header()
 
     def set_brightness(self, brightness):
         self.brightness = brightness
@@ -39,56 +42,40 @@ class SacnSend:
     def multicast_ip_generator(universe):
         return f"239.255.{universe >> 8}.{universe & 0xFF}"
 
+    def _create_base_header(self):
+          # Create the base sACN header
+          header = bytearray(638)
+          header[0:2] = 0x00,0x10  # preamble Size
+          header[2:4] = 0x00,0x00  # postambleSize = "\x00\x00"
+          header[4:16] = bytes("ASC-E1.17\x00\x00\x00", 'utf-8')  # acnPacketIdentifier = "ASC-E1.17\x00\x00\x00"
+          header[16:18] = 0x72,0x6e  # flagsAndLength = "\x72\x6e"
+          header[18:22] = 0x00,0x00,0x00,0x04  # vector = "\x00\x00\x00\x04"
+          cid = uuid.uuid1().bytes
+          header[22:38] = cid
+          header[38:40] = 0x72,0x58  # framingFlagsAndLength = "\x72\x58"
+          header[40:44] = 0x00,0x00,0x00,0x02  # framingVector = "\x00\x00\x00\x02"
+          source_name = "litPi".ljust(64, '\x00')  # sourceName = "streamingACN transmission test - python to sACN".ljust(64, ' ')
+          header[44:108] = bytes(source_name, 'utf-8')
+          header[108] = 0x64  # priority = "\x64"
+          header[109:111] = 0,0  # reservedWord = "\x00\x00"
+          header[111] = 0x7e  # sequenceNumber = "\x00"
+          header[112] = 0  # options = "\x00"
+          header[113:115] = 0x00,0x01  # universe = "\x00\x01"
+          header[115:117] = 0x72,0x0b  # DMPFlagsAndLength = "\x72\x0b"
+          header[117] = 0x02  # DMPvector = "\x02"
+          header[118] = 0xa1  # addressDataType = "\xa1"
+          header[119:121] = 0x00,0x00  # firstPropertyAddress = "\x00\x00"
+          header[121:123] = 0x00,0x01  # addressIncrement = "\x00\x01"
+          header[123:125] = 0x02,0x01  # propertyValueCount = "\x02\x01"
+          return header
 
-    def _create_header(self, universe, source_name="PoleFX", priority=100, sequence_number=0, options=0, address_increment=1, property_value_count=512, cid="polefx"):
-        acn_pid = "ASC-E1.17\x00\x00\x00"
-        flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
-        uuid_device = uuid.uuid5(uuid.NAMESPACE_DNS, cid)
-      
-        vector = struct.pack('!I', 4)
-        source_name = (source_name + '\x00' * 64)[:64]
-        priority = struct.pack('!B', priority)
-        sync_address = struct.pack('!H', 0)
-      
-        sequence_number = struct.pack('!B', sequence_number)
-        options = struct.pack('!B', options)
-        universe_packed = struct.pack('!H', universe)
-        framing_flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
-        framing_vector = struct.pack('!I', 2)
-        dmp_flags_and_length = struct.pack('!H', 0x7000 | (513 & 0x0FFF))
-        dmp_vector = struct.pack('!B', 2)
-        address_and_data_type = struct.pack('!B', 0xa1)
-        first_property_address = struct.pack('!H', 0)
-        address_increment = struct.pack('!H', address_increment)
-        property_value_count = struct.pack('!H', property_value_count)
-
-        header = struct.pack('!16sHH16sI64sBHHBBH16sHHIHHBBHBBHH', 
-                             acn_pid.encode(), 
-                             0x7000 | (638 & 0x0FFF),  
-                             uuid_device.bytes, 
-                             4,  
-                             source_name.encode(), 
-                             100,  
-                             0,  # Reserved
-                             0,  
-                             0,  
-                             universe_packed,  
-                             0x7000 | (638 & 0x0FFF),  
-                             2,  
-                             source_name.encode(), 
-                             100,  
-                             0,  
-                             0,  # Reserved
-                             sequence_number,  
-                             options,  
-                             universe_packed, 
-                             0x7000 | (513 & 0x0FFF),
-                             2,
-                             0xa1,
-                             0,  
-                             1,  
-                             512)
+    def _create_header(self, universe):
+        # Create a new header for the specified universe
+        header = self._base_header.copy()
+        header[111] = (header[111] + 1) % 255  # packet index
+        header[113:115] = universe.to_bytes(2, byteorder='big')  # set universe bytes
         return header
+
 
     def send_frame(self, frame: np.array):
         # Initialize parameters
@@ -105,23 +92,9 @@ class SacnSend:
 
         # Send each SACN universe data
         for universe, packet in enumerate(data, start=1):
-            # Create header for each frame
-            header = self._create_header(universe, 
-                                         source_name=source_name, 
-                                         priority=priority, 
-                                         sequence_number=sequence_number,
-                                         options=options, 
-                                         address_increment=address_increment,
-                                         property_value_count=property_value_count,
-                                         cid=cid)
-            # Prepare packet
-            packet = header + packet
-
-            # Send packet
-            self.socket.sendto(packet, ('239.255.0.' + str(universe), 5568))
-
-            # Increment sequence_number for the next packet
-            sequence_number = sequence_number + 1 if sequence_number < 255 else 0
+            header = self._create_header(universe)
+            header[126:638] = packet  # channel data
+            self._socket.sendto(header, ('239.255.0.' + str(universe), self.port))
 
 
     def convert_frame_to_sacn_data(self, frame):
