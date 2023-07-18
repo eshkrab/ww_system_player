@@ -167,6 +167,7 @@ class WWVideoPlayer:
 
     def playback_loop(self):
         fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
+        start_time = time.monotonic()
         while not self.stop_event.is_set():
             with self.lock:
                 if self.state == VideoPlayerState.STOPPED:
