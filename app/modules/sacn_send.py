@@ -62,13 +62,6 @@ class SacnSend:
         address_increment = struct.pack('!H', address_increment)
         property_value_count = struct.pack('!H', property_value_count)
 
-        print(f"Priority: {priority}, Type: {type(priority)}")
-        print(f"Sequence number: {sequence_number}, Type: {type(sequence_number)}")
-        print(f"Options: {options}, Type: {type(options)}")
-        print(f"Universe: {universe}, Type: {type(universe)}")
-        print(f"Address Increment: {address_increment}, Type: {type(address_increment)}")
-        print(f"Property Value Count: {property_value_count}, Type: {type(property_value_count)}")
-
         header = struct.pack('!16sHH16sI64sBHHBBH16sHHIHHBBHBBHH', 
                              acn_pid.encode(), 
                              0x7000 | (638 & 0x0FFF),  
@@ -88,7 +81,7 @@ class SacnSend:
                              0,  # Reserved
                              sequence_number,  
                              options,  
-                             universe, 
+                             universe_packed, 
                              0x7000 | (513 & 0x0FFF),
                              2,
                              0xa1,
