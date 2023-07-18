@@ -209,11 +209,18 @@ class WWVideoPlayer:
 
                         #  time.sleep(1/self.fps)
 
-            # Measure fps
-            end_time = time.monotonic()
             #  logging.debug(f"Frame took {end_time - start_time:.3f} seconds")
             #  logging.debug(f"Callback took {callback_time:.3f} seconds")
-            fps = 1 / (end_time - start_time)
+            # Measure fps
+            end_time = time.monotonic()
+            frame_time = end_time - start_time  # Time taken to process and display the frame
+
+            # Sleep for the remaining time in the frame, if any
+            remaining_time = (1/self.fps) - frame_time
+            if remaining_time > 0:
+                time.sleep(remaining_time)
+
+            fps = 1 / (time.monotonic() - start_time)  # Recompute fps after the sleep
             fps_history.append(fps)
 
             # Print fps every minute
@@ -223,12 +230,6 @@ class WWVideoPlayer:
                 fps_history.clear()
                 self.last_fps_print_time = time.time()
                 
-            # Sleep for the necessary duration to maintain the desired FPS, 
-            # but only if the processing of the frame didn't already take longer than this.
-            processing_time = end_time - start_time
-            if processing_time < 1/self.fps:
-                time.sleep(1/self.fps - processing_time)
-
 
             # Returns immediately if the clear event is set, else waits for the timeout
             if self.stop_event.wait(1 / self.fps):
