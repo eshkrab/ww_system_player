@@ -222,6 +222,12 @@ class WWVideoPlayer:
                 logging.debug(f"Average fps for the last minute: {avg_fps:.2f}")
                 fps_history.clear()
                 self.last_fps_print_time = time.time()
+                
+            # Sleep for the necessary duration to maintain the desired FPS, 
+            # but only if the processing of the frame didn't already take longer than this.
+            processing_time = end_time - start_time
+            if processing_time < 1/self.fps:
+                time.sleep(1/self.fps - processing_time)
 
 
             # Returns immediately if the clear event is set, else waits for the timeout
