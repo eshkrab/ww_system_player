@@ -7,7 +7,7 @@ import math
 import time
 import itertools
 import cProfile
-import uuid
+
 
 import socket
 import struct
@@ -39,81 +39,89 @@ class SacnSend:
         return f"239.255.{universe >> 8}.{universe & 0xFF}"
 
 
-    def _create_header(self, universe):
-           # ACN Packet Identifier
-           acn_pid = "ASC-E1.17\x00\x00\x00"
-           # Flags and Length
-           flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
-           # Universally Unique Identifier (UUID) for the Device
-           uuid_device = uuid.uuid5(uuid.NAMESPACE_DNS, 'litpi.local')
-           # Vector
-           vector = struct.pack('!I', 4)
-           # Source Name
-           source_name = "SACNSender\x00" * 6
-           # Priority
-           priority = struct.pack('!B', 100)
-           # Synchronization Address
-           sync_address = struct.pack('!H', 0)
-           # Sequence Number
-           sequence_number = struct.pack('!B', 0)
-           # Options
-           options = struct.pack('!B', 0)
-           # Universe
-           universe = struct.pack('!H', universe)
-           # Framing Flags and Length
-           framing_flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
-           # Framing Vector
-           framing_vector = struct.pack('!I', 2)
-           # DMP Flags and Length
-           dmp_flags_and_length = struct.pack('!H', 0x7000 | (513 & 0x0FFF))
-           # DMP Vector
-           dmp_vector = struct.pack('!B', 2)
-           # Address and Data Type
-           address_and_data_type = struct.pack('!B', 0xa1)
-           # First Property Address
-           first_property_address = struct.pack('!H', 0)
-           # Address Increment
-           address_increment = struct.pack('!H', 1)
-           # Property value count
-           property_value_count = struct.pack('!H', 512)
+    def _create_header(self, universe, source_name="PoleFX", priority=100, sequence_number=0, options=0, address_increment=1, property_value_count=512, cid="polefx"):
+        acn_pid = "ASC-E1.17\x00\x00\x00"
+        flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
+        uuid_device = uuid.uuid5(uuid.NAMESPACE_DNS, cid)
+      
+        vector = struct.pack('!I', 4)
+        source_name = (source_name + '\x00' * 64)[:64]
+        priority = struct.pack('!B', priority)
+        sync_address = struct.pack('!H', 0)
+      
+        sequence_number = struct.pack('!B', sequence_number)
+        options = struct.pack('!B', options)
+        universe = struct.pack('!H', universe)
+        framing_flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
+        framing_vector = struct.pack('!I', 2)
+        dmp_flags_and_length = struct.pack('!H', 0x7000 | (513 & 0x0FFF))
+        dmp_vector = struct.pack('!B', 2)
+        address_and_data_type = struct.pack('!B', 0xa1)
+        first_property_address = struct.pack('!H', 0)
+        address_increment = struct.pack('!H', address_increment)
+        property_value_count = struct.pack('!H', property_value_count)
 
-           header = struct.pack('!16sHH16sI64sBHHBBH16sHHIHHBBHBBHH',
-                                acn_pid.encode(),
-                                0x7000 | (638 & 0x0FFF),  # Flags and Length
-                                uuid_device.bytes,
-                                4,  # Vector
-                                source_name.encode(),
-                                100,  # Priority
-                                0,  # Reserved
-                                0,  # Sequence Number
-                                0,  # Options
-                                universe,  # Universe
-                                0x7000 | (638 & 0x0FFF),  # Framing Flags and Length
-                                2,  # Framing Vector
-                                source_name.encode(),
-                                100,  # Priority
-                                0,  # Reserved
-                                0,  # Sequence Number
-                                0,  # Options
-                                universe,  # Universe
-                                0x7000 | (513 & 0x0FFF),  # DMP Flags and Length
-                                2,  # DMP Vector
-                                0xa1,  # Address and Data Type
-                                0,  # First Property Address
-                                1,  # Address Increment
-                                512)  # Property Value Count
-           return header
-
+        header = struct.pack('!16sHH16sI64sBHHBBH16sHHIHHBBHBBHH', 
+                             acn_pid.encode(), 
+                             0x7000 | (638 & 0x0FFF),  
+                             uuid_device.bytes, 
+                             4,  
+                             source_name.encode(), 
+                             100,  
+                             0,  # Reserved
+                             0,  
+                             0,  
+                             universe,  
+                             0x7000 | (638 & 0x0FFF),  
+                             2,  
+                             source_name.encode(), 
+                             100,  
+                             0,  
+                             0,  # Reserved
+                             sequence_number,  
+                             options,  
+                             universe, 
+                             0x7000 | (513 & 0x0FFF),
+                             2,
+                             0xa1,
+                             0,  
+                             1,  
+                             512)
+        return header
 
     def send_frame(self, frame: np.array):
+        # Initialize parameters
+        source_name = "litPi"
+        cid = "litpi"
+        priority = 100
+        sequence_number = 0
+        options = 0
+        address_increment = 1
+        property_value_count = 512
+
         # Convert frame to SACN data
         data = self.convert_frame_to_sacn_data(frame)
 
         # Send each SACN universe data
         for universe, packet in enumerate(data, start=1):
-            header = self._create_header(universe)
+            # Create header for each frame
+            header = self._create_header(universe, 
+                                         source_name=source_name, 
+                                         priority=priority, 
+                                         sequence_number=sequence_number,
+                                         options=options, 
+                                         address_increment=address_increment,
+                                         property_value_count=property_value_count,
+                                         cid=cid)
+            # Prepare packet
             packet = header + packet
+
+            # Send packet
             self.socket.sendto(packet, ('239.255.0.' + str(universe), 5568))
+
+            # Increment sequence_number for the next packet
+            sequence_number = sequence_number + 1 if sequence_number < 255 else 0
+
 
     def convert_frame_to_sacn_data(self, frame):
         # Convert frame to numpy array and apply brightness scaling
