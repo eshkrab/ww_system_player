@@ -23,12 +23,12 @@ class SacnSend:
 
         self.start_universe = start_universe
         self.port = port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-        if self.bind_address:
-          self.sock.bind((self.bind_address, 0))
+        # Create a UDP socket
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        # Set SO_REUSEADDR to allow multiple instances of the application on the same machine
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Bind the socket to a specific network interface
+        self.socket.bind((self.bind_address, 0))
 
     def set_brightness(self, brightness):
         self.brightness = brightness
@@ -37,30 +37,116 @@ class SacnSend:
     def multicast_ip_generator(universe):
         return f"239.255.{universe >> 8}.{universe & 0xFF}"
 
-    def send_frame(self, frame: np.array):
-        data_list = self.convert_frame_to_sacn_data(frame)
 
-        for universe, data in enumerate(data_list, start=self.start_universe):
-            multicast_ip = self.multicast_ip_generator(universe)
-            header = self._create_header(len(data), universe)
-            packet = header + data
-            self.sock.sendto(packet, (multicast_ip, self.port))
+     def _create_header(self, universe):
+            # ACN Packet Identifier
+            acn_pid = "ASC-E1.17\x00\x00\x00"
+            # Flags and Length
+            flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
+            # Universally Unique Identifier (UUID) for the Device
+            uuid_device = uuid.uuid5(uuid.NAMESPACE_DNS, 'litpi.local')
+            # Vector
+            vector = struct.pack('!I', 4)
+            # Source Name
+            source_name = "SACNSender\x00" * 6
+            # Priority
+            priority = struct.pack('!B', 100)
+            # Synchronization Address
+            sync_address = struct.pack('!H', 0)
+            # Sequence Number
+            sequence_number = struct.pack('!B', 0)
+            # Options
+            options = struct.pack('!B', 0)
+            # Universe
+            universe = struct.pack('!H', universe)
+            # Framing Flags and Length
+            framing_flags_and_length = struct.pack('!H', 0x7000 | (638 & 0x0FFF))
+            # Framing Vector
+            framing_vector = struct.pack('!I', 2)
+            # DMP Flags and Length
+            dmp_flags_and_length = struct.pack('!H', 0x7000 | (513 & 0x0FFF))
+            # DMP Vector
+            dmp_vector = struct.pack('!B', 2)
+            # Address and Data Type
+            address_and_data_type = struct.pack('!B', 0xa1)
+            # First Property Address
+            first_property_address = struct.pack('!H', 0)
+            # Address Increment
+            address_increment = struct.pack('!H', 1)
+            # Property value count
+            property_value_count = struct.pack('!H', 512)
+
+            header = struct.pack('!16sHH16sI64sBHHBBH16sHHIHHBBHBBHH',
+                                 acn_pid.encode(),
+                                 0x7000 | (638 & 0x0FFF),  # Flags and Length
+                                 uuid_device.bytes,
+                                 4,  # Vector
+                                 source_name.encode(),
+                                 100,  # Priority
+                                 0,  # Reserved
+                                 0,  # Sequence Number
+                                 0,  # Options
+                                 universe,  # Universe
+                                 0x7000 | (638 & 0x0FFF),  # Framing Flags and Length
+                                 2,  # Framing Vector
+                                 source_name.encode(),
+                                 100,  # Priority
+                                 0,  # Reserved
+                                 0,  # Sequence Number
+                                 0,  # Options
+                                 universe,  # Universe
+                                 0x7000 | (513 & 0x0FFF),  # DMP Flags and Length
+                                 2,  # DMP Vector
+                                 0xa1,  # Address and Data Type
+                                 0,  # First Property Address
+                                 1,  # Address Increment
+                                 512)  # Property Value Count
+            return header
+    def send_frame(self, frame: np.array):
+        # Convert frame to SACN data
+        data = self.convert_frame_to_sacn_data(frame)
+
+        # Send each SACN universe data
+        for universe, packet in enumerate(data, start=1):
+            header = self._create_header(universe)
+            packet = header + packet
+            self.socket.sendto(packet, ('239.255.0.' + str(universe), 5568))
+
+    def convert_frame_to_sacn_data(self, frame):
+        # Convert frame to numpy array and apply brightness scaling
+        np_frame = np.frombuffer(frame, dtype=np.uint8)
+
+        # Calculate the number of chunks and the size of the padded frame
+        total_size = np_frame.size
+        num_chunks = (total_size + 510) // 511  # Compute number of chunks, rounding up
+
+        # Create a zero-padded frame
+        padded_frame = np.zeros(num_chunks * 511, dtype=np.uint8)
+        padded_frame[:total_size] = np_frame  # Copy original data
+
+        # Reshape to (-1, 511)
+        packetized_frame = padded_frame.reshape(-1, 511)
+
+        # Convert numpy arrays directly to lists of bytes
+        packetized_frame = [packet.tobytes() for packet in packetized_frame]
+
+        return packetized_frame
 
    
-    def _create_header(self, length, universe):
-        source_name = 'litPi-sACN'
-        padded_source_name = (source_name + ('\x00' * (64 - len(source_name)))).encode()
-        return struct.pack('!16sH64sBxxHBBHxxH',
-            b'ASC-E1.17\x00\x00\x00',  # preamble
-            0x7000 | (638 & 0x0FFF),  # flags and length
-            padded_source_name,  # source name
-            100,  # priority
-            0,  # sequence number
-            0,  # options
-            universe,  # universe
-            0x7000 | (length & 0x0FFF),  # flags and length
-            length  # property value count
-        )
+    #  def _create_header(self, length, universe):
+    #      source_name = 'litPi-sACN'
+    #      padded_source_name = (source_name + ('\x00' * (64 - len(source_name)))).encode()
+    #      return struct.pack('!16sH64sBxxHBBHxxH',
+    #          b'ASC-E1.17\x00\x00\x00',  # preamble
+    #          0x7000 | (638 & 0x0FFF),  # flags and length
+    #          padded_source_name,  # source name
+    #          100,  # priority
+    #          0,  # sequence number
+    #          0,  # options
+    #          universe,  # universe
+    #          0x7000 | (length & 0x0FFF),  # flags and length
+    #          length  # property value count
+    #      )
 
 
     #  def _create_header(self, dlen, universe):
@@ -84,26 +170,36 @@ class SacnSend:
     #                         0x7000 | dlen,
     #                         0x00)
 
-    @staticmethod
-    def convert_frame_to_sacn_data(frame, brightness=1.0):
-        # Convert frame to numpy array and apply brightness scaling
-        np_frame = (np.frombuffer(frame, dtype=np.uint8) * brightness) // 255
+    #
+    #  def send_frame(self, frame: np.array):
+    #      data_list = self.convert_frame_to_sacn_data(frame)
+    #
+    #      for universe, data in enumerate(data_list, start=self.start_universe):
+    #          multicast_ip = self.multicast_ip_generator(universe)
+    #          header = self._create_header(len(data), universe)
+    #          packet = header + data
+    #          self.sock.sendto(packet, (multicast_ip, self.port))
 
-        # Calculate the number of chunks and the size of the padded frame
-        total_size = np_frame.size
-        num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
-
-        # Create a zero-padded frame
-        padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
-        padded_frame[:total_size] = np_frame  # Copy original data
-
-        # Reshape to (-1, 512)
-        packetized_frame = padded_frame.reshape(-1, 512)
-
-        # Convert numpy arrays directly to lists of bytes
-        packetized_frame = [packet.tobytes() for packet in packetized_frame]
-
-        return packetized_frame
+    #  @staticmethod
+    #  def convert_frame_to_sacn_data(frame, brightness=1.0):
+    #      # Convert frame to numpy array and apply brightness scaling
+    #      np_frame = (np.frombuffer(frame, dtype=np.uint8) * brightness) // 255
+    #
+    #      # Calculate the number of chunks and the size of the padded frame
+    #      total_size = np_frame.size
+    #      num_chunks = (total_size + 511) // 512  # Compute number of chunks, rounding up
+    #
+    #      # Create a zero-padded frame
+    #      padded_frame = np.zeros(num_chunks * 512, dtype=np.uint8)
+    #      padded_frame[:total_size] = np_frame  # Copy original data
+    #
+    #      # Reshape to (-1, 512)
+    #      packetized_frame = padded_frame.reshape(-1, 512)
+    #
+    #      # Convert numpy arrays directly to lists of bytes
+    #      packetized_frame = [packet.tobytes() for packet in packetized_frame]
+    #
+    #      return packetized_frame
 
 #
 #  from typing import Callable, Optional, List, Dict, Union, Tuple
