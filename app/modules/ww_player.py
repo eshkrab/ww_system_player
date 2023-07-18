@@ -168,7 +168,6 @@ class WWVideoPlayer:
     def playback_loop(self):
         fps_history = deque(maxlen=self.fps * 60)  # Keep track of fps for the last minute
         while not self.stop_event.is_set():
-            start_time = time.monotonic()
             with self.lock:
                 if self.state == VideoPlayerState.STOPPED:
                     break
@@ -227,6 +226,7 @@ class WWVideoPlayer:
             # but only if the processing of the frame didn't already take longer than this.
             processing_time = end_time - start_time
             if processing_time < 1/self.fps:
+                logging.debug('sleep')
                 time.sleep(1/self.fps - processing_time)
 
 
@@ -234,6 +234,8 @@ class WWVideoPlayer:
             if self.stop_event.wait(1 / self.fps):
                 logging.debug("Stop event set, breaking")
                 break
+
+            start_time = time.monotonic()
 
     def load_playlist(self):
         if os.path.exists(self.playlist_path):
