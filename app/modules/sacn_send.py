@@ -28,7 +28,7 @@ class SacnSend:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         if self.bind_address:
-          sock.bind((self.bind_address, 0))
+          self.sock.bind((self.bind_address, 0))
 
     def set_brightness(self, brightness):
         self.brightness = brightness
