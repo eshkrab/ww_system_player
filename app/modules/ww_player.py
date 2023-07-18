@@ -227,7 +227,6 @@ class WWVideoPlayer:
             # but only if the processing of the frame didn't already take longer than this.
             processing_time = end_time - start_time
             if processing_time < 1/self.fps:
-                logging.debug('sleep')
                 time.sleep(1/self.fps - processing_time)
 
 
