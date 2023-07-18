@@ -46,24 +46,22 @@ class SacnSend:
             packet = header + data
             self.sock.sendto(packet, (multicast_ip, self.port))
 
+   
     def _create_header(self, length, universe):
-        return struct.pack('!16sHHHHHHHHIxxHBBBBBBBxH',
+        source_name = 'litPi-sACN'
+        padded_source_name = (source_name + ('\x00' * (64 - len(source_name)))).encode()
+        return struct.pack('!16sH64sBxxHBBHxxH',
             b'ASC-E1.17\x00\x00\x00',  # preamble
             0x7000 | (638 & 0x0FFF),  # flags and length
-            4,  # vector
-            b'pySimpleACN\x00' + (b'\x00' * (64 - 11)),  # source name
+            padded_source_name,  # source name
             100,  # priority
-            0,  # reserved
             0,  # sequence number
             0,  # options
             universe,  # universe
             0x7000 | (length & 0x0FFF),  # flags and length
-            2,  # vector
-            0xa1,  # address type & data type
-            0,  # first property address
-            1,  # address increment
             length  # property value count
         )
+
 
     #  def _create_header(self, dlen, universe):
     #      return struct.pack('!16sHHHHHHHHIxxHBBBBBBBxxBBBH',
