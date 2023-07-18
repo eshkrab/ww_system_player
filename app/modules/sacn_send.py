@@ -29,6 +29,8 @@ class SacnSend:
         if self.bind_address:
           sock.bind((self.bind_address, 0))
 
+    def set_brightness(self, brightness):
+        self.brightness = brightness
 
     @staticmethod
     def multicast_ip_generator(universe):
