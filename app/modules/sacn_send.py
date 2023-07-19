@@ -98,6 +98,7 @@ class SacnSend:
     def convert_frame_to_sacn_data(self, frame):
         # Convert frame to numpy array and apply brightness scaling
         np_frame = np.frombuffer(frame, dtype=np.uint8)
+        np_frame = (np_frame * (self.brightness / 255)).astype(np.uint8)
         #  np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
 
         # Calculate the number of chunks and the size of the padded frame
