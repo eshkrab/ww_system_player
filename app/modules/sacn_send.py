@@ -19,7 +19,7 @@ class SacnSend:
         self.bind_address = bind_address
         self.multi = multicast
         self.brightness = brightness
-        self.set_brightness(brightness)
+        #  self.set_brightness(brightness)
         self.num_strips = num_strips
         self.num_pixels = num_pixels
         self.num_universes = math.ceil( (num_strips * num_pixels * 3) / 510)
