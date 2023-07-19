@@ -35,8 +35,6 @@ class SacnSend:
         # Create the base sACN header
         self._base_header = self._create_base_header()
 
-    def set_brightness(self, brightness):
-        self.brightness = brightness
 
     @staticmethod
     def multicast_ip_generator(universe):
@@ -99,8 +97,8 @@ class SacnSend:
 
     def convert_frame_to_sacn_data(self, frame):
         # Convert frame to numpy array and apply brightness scaling
-        #  np_frame = np.frombuffer(frame, dtype=np.uint8)
-        np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
+        np_frame = np.frombuffer(frame, dtype=np.uint8)
+        #  np_frame = (np.frombuffer(frame, dtype=np.uint8) * self.brightness) // 255
 
         # Calculate the number of chunks and the size of the padded frame
         total_size = np_frame.size
