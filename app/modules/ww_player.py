@@ -62,7 +62,7 @@ class WWVideoPlayer:
         self.last_fps_print_time = time.time()  # Initialize the attribute
 
     def get_current_video_name(self):
-        filepath = self.playlist[self.current_video_index]["filepath"]
+        filepath = self.playlist['playlist'][self.current_video_index]["filepath"]
         return os.path.basename(filepath)
 
     def play(self):
@@ -105,8 +105,8 @@ class WWVideoPlayer:
             #  self.fade_factor = 1.0
             #  self.fade_out()
             logging.debug("NEXT VIDEO")
-            logging.debug("playlist len %d", len(self.playlist))
-            self.current_video_index = (self.current_video_index + 1) % len(self.playlist)
+            logging.debug("playlist len %d", len(self.playlist['playlist']))
+            self.current_video_index = (self.current_video_index + 1) % len(self.playlist['playlist'])
             self.load_video(self.current_video_index)
             #  self.fade_in()
 
@@ -114,7 +114,7 @@ class WWVideoPlayer:
         with self.lock:
             #  self.fade_factor = 1.0
             #  self.fade_out()
-            self.current_video_index = (self.current_video_index - 1) % len(self.playlist)
+            self.current_video_index = (self.current_video_index - 1) % len(self.playlist["playlist"])
             self.load_video(self.current_video_index)
             #  self.fade_in()
 
@@ -127,7 +127,7 @@ class WWVideoPlayer:
 
     def play_by_name(self, name: str) -> bool:
         with self.lock:
-            for i, item in enumerate(self.playlist):
+            for i, item in enumerate(self.playlist['playlist']):
                 if os.path.basename(item["filepath"]) == name:
                     #  self.fade_factor = 1.0
                     #  self.fade_out()
@@ -139,7 +139,7 @@ class WWVideoPlayer:
 
     def play_by_index(self, index: int) -> bool:
         with self.lock:
-            if 0 <= index < len(self.playlist):
+            if 0 <= index < len(self.playlist['playlist']):
                 #  self.fade_factor = 1.0
                 #  self.fade_out()
                 self.current_video_index = index
@@ -204,7 +204,7 @@ class WWVideoPlayer:
                             elif self.mode == VideoPlayerMode.REPEAT:
                                 self.next_video()
                             elif self.mode == VideoPlayerMode.REPEAT_NONE:
-                                if self.current_video_index < len(self.playlist["playlist"]) - 1:
+                                if self.current_video_index < len(self.playlist['playlist']) - 1:
                                     self.next_video()
                                 else:
                                     self.stop()
