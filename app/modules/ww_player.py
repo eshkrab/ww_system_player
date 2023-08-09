@@ -104,6 +104,8 @@ class WWVideoPlayer:
         with self.lock:
             #  self.fade_factor = 1.0
             #  self.fade_out()
+            logging.debug("NEXT VIDEO")
+            logging.debug("playlist len %d", len(self.playlist))
             self.current_video_index = (self.current_video_index + 1) % len(self.playlist)
             self.load_video(self.current_video_index)
             #  self.fade_in()
